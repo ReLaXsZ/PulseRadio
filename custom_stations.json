@@ -1,0 +1,42 @@
+[
+  {
+    "stationuuid": "custom-1rock-bg",
+    "name": "1 Rock Bulgaria",
+    "url_resolved": "https://play.global.audio/radio1rock.aac",
+    "country": "Bulgaria",
+    "tags": "rock",
+    "favicon": "https://www.radio1rock.bg/favicon.ico"
+  },
+  {
+    "stationuuid": "custom-fresh-1",
+    "name": "Fresh!",
+    "url_resolved": "http://193.108.24.21:8000/fresh",
+    "country": "Bulgaria",
+    "tags": "pop,hits",
+    "favicon": "https://radiorefresh.bg/favicon.ico"
+  },
+  {
+    "stationuuid": "custom-energy-1",
+    "name": "Energy NRJ Bulgaria",
+    "url_resolved": "https://play.global.audio/nrj128",
+    "country": "Bulgaria",
+    "tags": "dance,pop",
+    "favicon": "https://media.metacast.eu/pictures/10_2015/OdriLYWpbHJqKDAcGCMv-7384.png"
+  },
+  {
+    "stationuuid": "custom-energy-90s",
+    "name": "Energy NRJ Bulgaria 90s Only",
+    "url_resolved": "https://play.global.audio/energy-90s",
+    "country": "Bulgaria",
+    "tags": "90s,dance",
+    "favicon": "https://media.metacast.eu/pictures/10_2015/OdriLYWpbHJqKDAcGCMv-7384.png"
+  },
+  {
+    "stationuuid": "custom-energy-00s",
+    "name": "Energy NRJ Bulgaria 00s Only",
+    "url_resolved": "https://play.global.audio/energy-00shi.aac",
+    "country": "Bulgaria",
+    "tags": "00s,dance",
+    "favicon": "https://media.metacast.eu/pictures/10_2015/OdriLYWpbHJqKDAcGCMv-7384.png"
+  }
+]
