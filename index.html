@@ -107,7 +107,7 @@
 
             <div class="filter-group">
                 <h3 data-i18n="favorites">Любими</h3>
-                <div class="categories-list" id="favorites-list"></div>
+                <div class="categories-list favorites-list" id="favorites-list"></div>
             </div>
         </aside>
 
@@ -136,13 +136,12 @@
                     <div class="now-playing-song" id="song-info-container" style="display: none;">
                         <i class="fa-solid fa-music"></i>
                         <span id="song-info-text">Проверка на песента...</span>
-                        <button id="refresh-song-btn" class="icon-btn" title="Обнови"><i class="fa-solid fa-rotate-right"></i></button>
+                        <button id="refresh-song-btn" class="icon-btn" title="Обнови" style="margin-left: auto;"><i class="fa-solid fa-rotate-right"></i></button>
                     </div>
 
-                    <!-- Визуализатор с бутон за цял екран -->
                     <div class="visualizer-wrapper" style="position: relative;">
                         <canvas id="visualizer" width="800" height="60"></canvas>
-                        <button id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор" style="position: absolute; right: 10px; top: 10px;"><i class="fa-solid fa-expand"></i></button>
+                        <button id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор" style="position: absolute; right: 8px; top: 8px;"><i class="fa-solid fa-expand"></i></button>
                     </div>
 
                     <div class="eq-controls">
@@ -150,16 +149,15 @@
                         <label data-i18n="mid">Mid</label> <input type="range" id="eq-mid" min="-12" max="12" value="0">
                         <label data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0">
                         
-                        <!-- Сън таймер бутон и меню -->
                         <div class="sleep-timer-dropdown-container" style="position: relative; display: inline-block; margin-left: auto;">
                             <button id="sleep-timer-btn" class="icon-btn" title="Сън таймер"><i class="fa-regular fa-clock"></i></button>
-                            <div class="sleep-timer-menu" id="sleep-timer-menu" style="display: none; position: absolute; bottom: 100%; right: 0; background: var(--input-bg); border: 1px solid var(--border); border-radius: 8px; padding: 10px; flex-direction: column; gap: 6px; width: 130px; z-index: 100; backdrop-filter: var(--glass-blur);">
+                            <div class="sleep-timer-menu" id="sleep-timer-menu" style="display: none; position: absolute; bottom: 100%; right: 0; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; padding: 10px; flex-direction: column; gap: 6px; width: 130px; z-index: 100; backdrop-filter: var(--glass-blur);">
                                 <span style="font-size: 0.75rem; color: var(--text-muted);">Сън таймер:</span>
-                                <button class="timer-opt" data-mins="0" style="background:transparent; border:none; color:var(--text); text-align:left; cursor:pointer; font-size:0.8rem;">Изключен</button>
-                                <button class="timer-opt" data-mins="15" style="background:transparent; border:none; color:var(--text); text-align:left; cursor:pointer; font-size:0.8rem;">15 мин</button>
-                                <button class="timer-opt" data-mins="30" style="background:transparent; border:none; color:var(--text); text-align:left; cursor:pointer; font-size:0.8rem;">30 мин</button>
-                                <button class="timer-opt" data-mins="45" style="background:transparent; border:none; color:var(--text); text-align:left; cursor:pointer; font-size:0.8rem;">45 мин</button>
-                                <button class="timer-opt" data-mins="60" style="background:transparent; border:none; color:var(--text); text-align:left; cursor:pointer; font-size:0.8rem;">60 мин</button>
+                                <button class="timer-opt" data-mins="0" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">Изключен</button>
+                                <button class="timer-opt" data-mins="15" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">15 мин</button>
+                                <button class="timer-opt" data-mins="30" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">30 мин</button>
+                                <button class="timer-opt" data-mins="45" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">45 мин</button>
+                                <button class="timer-opt" data-mins="60" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">60 мин</button>
                                 <div id="timer-countdown" style="font-size:0.7rem; color:var(--accent); display:none;"></div>
                             </div>
                         </div>
@@ -219,7 +217,6 @@
         <p data-i18n="footer">🔒 Без бисквитки, без регистрация, без следене. Чисто музикално изживяване.</p>
     </footer>
 
-    <!-- Зареждане като ES модул според твоята структура -->
     <script type="module" src="script.js"></script>
 </body>
 </html>
