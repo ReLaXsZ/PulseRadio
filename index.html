@@ -3,197 +3,234 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="theme-color" content="#0b0f19">
-    <title>GlobalPulse Radio | Global & Anonymous Streaming</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Montserrat:wght@700;800&display=swap" rel="stylesheet">
-    
+    <title>GlobalPulse Radio</title>
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/lipis/flag-icons@7.0.0/css/flag-icons.min.css">
 </head>
 <body>
 
-    <header class="top-header">
+    <!-- Header -->
+    <header class="header">
         <div class="logo">
-            <i class="fa-solid fa-radio" style="color: #f59e0b;"></i>
-            <span>GlobalPulse Radio</span>
+            <i class="fa-solid fa-radio"></i>
+            <span>GlobalPulse</span>
         </div>
+        
+        <div class="search-bar">
+            <i class="fa-solid fa-search"></i>
+            <input type="text" id="search-input" placeholder="Търси станция..." data-i18n-placeholder="searchPlaceholder">
+        </div>
+
         <div class="header-controls">
-            <div class="custom-lang-select" id="lang-select-container">
+            <!-- Езици -->
+            <div class="lang-selector-custom" id="lang-container">
                 <button class="lang-btn" id="lang-btn">
-                    <span class="fi fi-gb"></span> English <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
+                    <span class="flag-bg"></span> Български <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
                 </button>
                 <div class="lang-dropdown" id="lang-dropdown">
-                    <div class="lang-option" data-value="bg"><span class="fi fi-bg"></span> Български</div>
-                    <div class="lang-option" data-value="en"><span class="fi fi-gb"></span> English</div>
-                    <div class="lang-option" data-value="es"><span class="fi fi-es"></span> Español</div>
-                    <div class="lang-option" data-value="fr"><span class="fi fi-fr"></span> Français</div>
-                    <div class="lang-option" data-value="de"><span class="fi fi-de"></span> Deutsch</div>
-                    <div class="lang-option" data-value="it"><span class="fi fi-it"></span> Italiano</div>
-                    <div class="lang-option" data-value="pt"><span class="fi fi-pt"></span> Português</div>
-                    <div class="lang-option" data-value="ru"><span class="fi fi-ru"></span> Русский</div>
-                    <div class="lang-option" data-value="zh"><span class="fi fi-cn"></span> 中文</div>
-                    <div class="lang-option" data-value="ja"><span class="fi fi-jp"></span> 日本語</div>
+                    <div class="lang-option" data-value="bg"><span class="flag-bg"></span> Български</div>
+                    <div class="lang-option" data-value="en"><span class="flag-gb"></span> English</div>
+                    <div class="lang-option" data-value="es"><span class="flag-es"></span> Español</div>
+                    <div class="lang-option" data-value="fr"><span class="flag-fr"></span> Français</div>
+                    <div class="lang-option" data-value="de"><span class="flag-de"></span> Deutsch</div>
+                    <div class="lang-option" data-value="it"><span class="flag-it"></span> Italiano</div>
+                    <div class="lang-option" data-value="pt"><span class="flag-pt"></span> Português</div>
+                    <div class="lang-option" data-value="ru"><span class="flag-ru"></span> Русский</div>
+                    <div class="lang-option" data-value="zh"><span class="flag-cn"></span> 中文</div>
+                    <div class="lang-option" data-value="ja"><span class="flag-jp"></span> 日本語</div>
                 </div>
             </div>
             <select id="language-select" style="display:none;">
-                <option value="bg">bg</option>
-                <option value="en" selected>en</option>
-                <option value="es">es</option>
-                <option value="fr">fr</option>
-                <option value="de">de</option>
-                <option value="it">it</option>
-                <option value="pt">pt</option>
-                <option value="ru">ru</option>
-                <option value="zh">zh</option>
-                <option value="ja">ja</option>
+                <option value="bg" selected>BG</option>
+                <option value="en">EN</option>
+                <option value="es">ES</option>
+                <option value="fr">FR</option>
+                <option value="de">DE</option>
+                <option value="it">IT</option>
+                <option value="pt">PT</option>
+                <option value="ru">RU</option>
+                <option value="zh">ZH</option>
+                <option value="ja">JA</option>
             </select>
 
-            <button id="theme-toggle" class="icon-btn" title="Смени тема">
-                <i class="fa-solid fa-moon"></i>
-            </button>
-            <span class="privacy-badge"><i class="fa-solid fa-shield-halved"></i> 100% Anonymous</span>
+            <button id="theme-toggle" class="icon-btn" title="Смени тема"><i class="fa-solid fa-moon"></i></button>
         </div>
     </header>
 
+    <!-- Main Container -->
     <main class="main-container">
         
+        <!-- Sidebar / Navigation -->
         <aside class="sidebar">
-            <div class="search-box">
-                <i class="fa-solid fa-magnifying-glass"></i>
-                <input type="text" id="search-input" placeholder="Търси станция..." data-i18n-placeholder="searchPlaceholder">
-            </div>
-
-            <div class="filter-group">
+            <div class="sidebar-section">
                 <h3 data-i18n="genres">Музикални жанрове</h3>
-                <div class="categories-list" id="genre-buttons">
-                    <button class="cat-btn active" data-genre="all"><i class="fa-solid fa-globe" style="color: #38bdf8;"></i> <span data-i18n="all">Всички</span></button>
-                    <button class="cat-btn" data-genre="pop"><i class="fa-solid fa-music" style="color: #f472b6;"></i> <span data-i18n="pop">Pop</span></button>
-                    <button class="cat-btn" data-genre="rock"><i class="fa-solid fa-guitar" style="color: #ef4444;"></i> <span data-i18n="rock">Rock</span></button>
-                    <button class="cat-btn" data-genre="jazz"><i class="fa-solid fa-saxophone" style="color: #fbbf24;"></i> <span data-i18n="jazz">Jazz</span></button>
-                    <button class="cat-btn" data-genre="classical"><i class="fa-solid fa-violin" style="color: #a78bfa;"></i> <span data-i18n="classical">Classical</span></button>
-                    <button class="cat-btn" data-genre="lofi"><i class="fa-solid fa-headphones" style="color: #34d399;"></i> <span data-i18n="lofi">Lofi / Chill</span></button>
-                    <button class="cat-btn" data-genre="news"><i class="fa-solid fa-newspaper" style="color: #60a5fa;"></i> <span data-i18n="news">News</span></button>
+                <div class="category-buttons" id="genre-buttons">
+                    <button class="cat-btn active" data-genre="all" data-i18n="all">Всички</button>
+                    <button class="cat-btn" data-genre="pop" data-i18n="pop">Pop</button>
+                    <button class="cat-btn" data-genre="rock" data-i18n="rock">Rock</button>
+                    <button class="cat-btn" data-genre="jazz" data-i18n="jazz">Jazz</button>
+                    <button class="cat-btn" data-genre="classical" data-i18n="classical">Classical</button>
+                    <button class="cat-btn" data-genre="lofi" data-i18n="lofi">Lofi / Chill</button>
+                    <button class="cat-btn" data-genre="news" data-i18n="news">News</button>
                 </div>
             </div>
 
-            <div class="filter-group">
+            <div class="sidebar-section">
                 <h3 data-i18n="countries">Държави</h3>
-                <div class="search-box country-search">
-                    <i class="fa-solid fa-magnifying-glass"></i>
+                <div class="search-bar country-search">
+                    <i class="fa-solid fa-search"></i>
                     <input type="text" id="country-search-input" placeholder="Търси държава..." data-i18n-placeholder="searchCountryPlaceholder">
                 </div>
-                <div class="countries-grid" id="country-buttons">
-                    <button class="cat-btn" data-country="Bulgaria"><span class="fi fi-bg"></span> Bulgaria</button>
-                    <button class="cat-btn" data-country="United States"><span class="fi fi-us"></span> USA</button>
-                    <button class="cat-btn" data-country="United Kingdom"><span class="fi fi-gb"></span> UK</button>
-                    <button class="cat-btn" data-country="Germany"><span class="fi fi-de"></span> Germany</button>
-                    <button class="cat-btn" data-country="France"><span class="fi fi-fr"></span> France</button>
-                    <button class="cat-btn" data-country="Japan"><span class="fi fi-jp"></span> Japan</button>
-                    <button class="cat-btn" data-country="Spain"><span class="fi fi-es"></span> Spain</button>
-                    <button class="cat-btn" data-country="Italy"><span class="fi fi-it"></span> Italy</button>
-                    <button class="cat-btn" data-country="Netherlands"><span class="fi fi-nl"></span> Netherlands</button>
-                    <button class="cat-btn" data-country="Russia"><span class="fi fi-ru"></span> Russia</button>
-                    <button class="cat-btn" data-country="Romania"><span class="fi fi-ro"></span> Romania</button>
-                    <button class="cat-btn" data-country="Greece"><span class="fi fi-gr"></span> Greece</button>
-                    <button class="cat-btn" data-country="Turkey"><span class="fi fi-tr"></span> Turkey</button>
-                    <button class="cat-btn" data-country="Brazil"><span class="fi fi-br"></span> Brazil</button>
-                    <button class="cat-btn" data-country="Canada"><span class="fi fi-ca"></span> Canada</button>
-                    <button class="cat-btn" data-country="Australia"><span class="fi fi-au"></span> Australia</button>
+                <div class="category-buttons" id="country-buttons">
+                    <button class="cat-btn" data-country="Bulgaria">🇧🇬 България</button>
+                    <button class="cat-btn" data-country="United States">🇺🇸 USA</button>
+                    <button class="cat-btn" data-country="United Kingdom">🇬🇧 UK</button>
+                    <button class="cat-btn" data-country="Germany">🇩🇪 Germany</button>
+                    <button class="cat-btn" data-country="France">🇫🇷 France</button>
+                    <button class="cat-btn" data-country="Italy">🇮🇹 Italy</button>
+                    <button class="cat-btn" data-country="Spain">🇪🇸 Spain</button>
+                    <button class="cat-btn" data-country="Greece">🇬🇷 Greece</button>
                 </div>
             </div>
 
-            <div class="filter-group">
+            <!-- Любими -->
+            <div class="sidebar-section">
                 <h3 data-i18n="favorites">Любими</h3>
-                <div class="categories-list" id="favorites-list"></div>
+                <div id="favorites-list" class="favorites-list">
+                    <!-- Любимите станции се зареждат тук динамично -->
+                </div>
             </div>
         </aside>
 
+        <!-- Content Area -->
         <section class="content-area">
             
-            <div class="dashboard-top">
-                <div class="hero-section">
-                    <div class="hero-content">
-                        <h1>GlobalPulse Radio</h1>
-                        <div class="hero-buttons">
-                            <button id="play-random-btn" class="hero-btn"><i class="fa-solid fa-play"></i> <span data-i18n="playNow">Слушай сега</span></button>
-                            <button id="play-random-global-btn" class="hero-btn-secondary"><i class="fa-solid fa-shuffle"></i> <span data-i18n="randomStation">Произволно радио</span></button>
-                        </div>
+            <!-- Hero Banner -->
+            <div class="hero-banner">
+                <div class="hero-text">
+                    <h1 data-i18n="stationsTitle">Станции</h1>
+                    <p data-i18n="heroText">Слушай любимите си радиостанции от цял свят. Без регистрация, без реклами.</p>
+                    <div class="hero-buttons">
+                        <button id="play-random-btn" class="primary-btn"><i class="fa-solid fa-dice"></i> <span data-i18n="randomStation">Произволно радио</span></button>
+                        <button id="play-random-global-btn" class="secondary-btn"><i class="fa-solid fa-globe"></i> Global Random</button>
                     </div>
                 </div>
-
-                <div class="player-card">
-                    <div class="now-playing-info">
-                        <img id="station-icon" src="https://cdn-icons-png.flaticon.com/512/2950/2950683.png" alt="Logo">
-                        <div>
-                            <h2 id="station-name" data-i18n="selectStation">Изберете станция</h2>
-                            <p id="station-details" data-i18n="genreCountry">Жанр и Държава</p>
-                        </div>
+                <!-- Бърз избор (Quick Picks) -->
+                <div class="quick-picks">
+                    <h4 data-i18n="quickPicks">Бърз избор</h4>
+                    <div class="quick-picks-grid" id="quick-picks-container">
+                        <!-- Динамично зареждане -->
                     </div>
-
-                    <div class="now-playing-song" id="song-info-container" style="display: none;">
-                        <i class="fa-solid fa-music"></i>
-                        <span id="song-info-text">Проверка на песента...</span>
-                        <button id="refresh-song-btn" class="icon-btn" title="Обнови"><i class="fa-solid fa-rotate-right"></i></button>
-                    </div>
-
-                    <canvas id="visualizer" width="800" height="60"></canvas>
-
-                    <div class="eq-controls">
-                        <label data-i18n="bass">Bass</label> <input type="range" id="eq-bass" min="-12" max="12" value="0">
-                        <label data-i18n="mid">Mid</label> <input type="range" id="eq-mid" min="-12" max="12" value="0">
-                        <label data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0">
-                    </div>
-
-                    <div class="custom-player">
-                        <audio id="audio-stream" crossorigin="anonymous"></audio>
-                        <button id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
-                        <div class="time-display">
-                            <span id="current-time">0:00</span> / <span id="duration-time">0:00</span>
-                        </div>
-                        <input type="range" id="seek-slider" class="seek-slider" value="0" min="0" max="100" step="0.1">
-                        <div class="volume-container">
-                            <i class="fa-solid fa-volume-high" id="volume-icon"></i>
-                            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="1">
-                        </div>
-                    </div>
-
-                    <button id="share-btn" class="share-btn" disabled>
-                        <i class="fa-solid fa-share-nodes"></i> <span data-i18n="share">Сподели</span>
-                    </button>
                 </div>
             </div>
 
-            <div class="quick-picks-wrapper">
-                <h3 data-i18n="quickPicks">Бърз избор</h3>
-                <div class="quick-picks" id="quick-picks-container">
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">Зареждане на топ станции...</p>
-                </div>
+            <!-- Сортиране -->
+            <div class="sort-bar">
+                <button class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
+                <button class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
+                <button class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
             </div>
 
-            <div class="stations-grid-wrapper">
-                <div class="stations-header">
-                    <h3 id="section-title" data-i18n="stationsTitle">Станции</h3>
-                    <div class="sort-controls" id="sort-controls">
-                        <button class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
-                        <button class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
-                        <button class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
-                    </div>
-                </div>
-                <div id="stations-container">
-                    <p class="loading-text" data-i18n="loading">Зареждане...</p>
-                </div>
+            <!-- Станции Grid -->
+            <div id="stations-container" class="stations-grid">
+                <!-- Тук се зареждат станциите -->
             </div>
+
         </section>
 
     </main>
 
-    <footer class="footer">
-        <p data-i18n="footer">🔒 Без бисквитки, без регистрация, без следене. Чисто музикално изживяване.</p>
+    <!-- Player Bar -->
+    <footer class="player-bar" id="player-bar">
+        <audio id="audio-stream" crossorigin="anonymous"></audio>
+
+        <div class="now-playing">
+            <img id="station-icon" src="https://cdn-icons-png.flaticon.com/512/2950/2950683.png" alt="Station">
+            <div class="track-info">
+                <h4 id="station-name" data-i18n="selectStation">Изберете станция</h4>
+                <p id="station-details" data-i18n="genreCountry">Жанр и Държава</p>
+            </div>
+            <button id="share-btn" class="icon-btn" title="Сподели станция" disabled><i class="fa-solid fa-share-nodes"></i></button>
+        </div>
+
+        <div class="player-center">
+            <div class="player-controls">
+                <button id="play-pause-btn" class="play-pause-main"><i class="fa-solid fa-play"></i></button>
+            </div>
+            
+            <div class="progress-container">
+                <span id="current-time">0:00</span>
+                <input type="range" id="seek-slider" value="0" max="100">
+                <span id="duration-time">LIVE</span>
+            </div>
+
+            <!-- Инфо за песента в реално време -->
+            <div class="song-info-container" id="song-info-container" style="display: none;">
+                <span id="song-info-text">Проверка за песен...</span>
+                <button id="refresh-song-btn" class="icon-btn" title="Обнови песента"><i class="fa-solid fa-rotate"></i></button>
+            </div>
+        </div>
+
+        <!-- Десен панел: Екстри (Еквалайзер, Сън таймер, Звук, Визуализатор) -->
+        <div class="player-right-controls">
+            
+            <!-- Сън таймер контролер -->
+            <div class="sleep-timer-dropdown-container">
+                <button id="sleep-timer-btn" class="icon-btn" title="Сън таймер"><i class="fa-regular fa-clock"></i></button>
+                <div class="sleep-timer-menu" id="sleep-timer-menu">
+                    <span>Сън таймер:</span>
+                    <button class="timer-opt" data-mins="0">Изключен</button>
+                    <button class="timer-opt" data-mins="15">15 мин</button>
+                    <button class="timer-opt" data-mins="30">30 мин</button>
+                    <button class="timer-opt" data-mins="45">45 мин</button>
+                    <button class="timer-opt" data-mins="60">60 мин</button>
+                    <div id="timer-countdown" style="font-size:0.75rem; color:var(--accent); display:none; margin-top:4px;">Остават: 15:00</div>
+                </div>
+            </div>
+
+            <!-- Визуализатор (Красив нов вид + бутон Цял екран) -->
+            <div class="visualizer-box" id="visualizer-box" title="Кликни за цял екран">
+                <canvas id="visualizer" width="120" height="40"></canvas>
+                <button id="fullscreen-vis-btn" class="icon-btn-small" title="Цял екран"><i class="fa-solid fa-expand"></i></button>
+            </div>
+
+            <!-- Еквалайзер контролер -->
+            <div class="eq-dropdown-container">
+                <button id="eq-toggle-btn" class="icon-btn" title="Еквалайзер"><i class="fa-solid fa-sliders"></i></button>
+                <div class="eq-popup" id="eq-popup">
+                    <div class="eq-slider-group">
+                        <label>Bass</label>
+                        <input type="range" id="eq-bass" min="-20" max="20" value="0" step="1">
+                    </div>
+                    <div class="eq-slider-group">
+                        <label>Mid</label>
+                        <input type="range" id="eq-mid" min="-20" max="20" value="0" step="1">
+                    </div>
+                    <div class="eq-slider-group">
+                        <label>Treble</label>
+                        <input type="range" id="eq-treble" min="-20" max="20" value="0" step="1">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Сила на звука + Мют бутон -->
+            <div class="volume-control">
+                <button id="volume-icon" class="icon-btn" title="Звук / Mute"><i class="fa-solid fa-volume-high"></i></button>
+                <input type="range" id="volume-slider" min="0" max="1" step="0.05" value="1">
+            </div>
+        </div>
     </footer>
 
-    <script type="module" src="script.js"></script> 
+    <!-- Модален прозорец за визуализатор на цял екран -->
+    <div id="fullscreen-modal" class="fullscreen-modal">
+        <button id="close-fullscreen" class="close-fs-btn"><i class="fa-solid fa-xmark"></i></button>
+        <div class="fs-content">
+            <h2 id="fs-station-name">Радио станция</h2>
+            <canvas id="fullscreen-visualizer"></canvas>
+        </div>
+    </div>
+
+    <!-- Зареждане на главен скрипт като модул -->
+    <script type="module" src="script.js"></script>
 </body>
 </html>

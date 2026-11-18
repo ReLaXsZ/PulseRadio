@@ -1,5 +1,5 @@
 import { API_BASE, loadCustomStations, fetchStations } from './api.js';
-import { initAudioGraph, audioContext } from './audio.js';
+import { initAudioGraph, audioContext, startFullscreenVisualizer, stopFullscreenVisualizer } from './audio.js';
 
 const stationsContainer = document.getElementById('stations-container');
 const audioStream = document.getElementById('audio-stream');
@@ -47,9 +47,7 @@ langOptions.forEach(opt => {
         const lang = opt.getAttribute('data-value');
         const flagClass = opt.querySelector('span').className;
         const text = opt.textContent.trim();
-        
         langBtn.innerHTML = `<span class="${flagClass}"></span> ${text} <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>`;
-        
         languageSelect.value = lang;
         updateLanguage();
     });
@@ -62,7 +60,7 @@ const translations = {
     fr: { genres: "Genres Musicaux", countries: "Pays", all: "Toutes", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classique", lofi: "Lofi / Chill", news: "Actualités", loading: "Chargement des stations...", noStations: "Aucune station trouvée.", failed: "Échec du chargement.", footer: "🔒 Sans cookies, sans inscription, sans suivi. Pure expérience musicale.", selectStation: "Sélectionnez une station", genreCountry: "Genre et Pays", stationsTitle: "Stations", favorites: "Favoris", share: "Partager", searchPlaceholder: "Rechercher une station...", searchCountryPlaceholder: "Rechercher un pays...", linkCopied: "Lien copié !", noFavorites: "Aucune station favorite.", bass: "Basses", mid: "Médiums", treble: "Aigus", songLoading: "Vérification...", songError: "Aucune info sur la chanson.", heroText: "Écoutez vos stations de radio préférées du monde entier. Sans inscription, sans publicité.", playNow: "Écouter maintenant", quickPicks: "Choix rapides", sortClicks: "Les plus écoutées", sortName: "Alphabétique", sortVotes: "Votes", randomStation: "Radio Aléatoire" },
     de: { genres: "Musikgenres", countries: "Länder", all: "Alle", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Klassik", lofi: "Lofi / Chill", news: "Nachrichten", loading: "Sender werden geladen...", noStations: "Keine Sender gefunden.", failed: "Laden fehlgeschlagen.", footer: "🔒 Keine Cookies, keine Registrierung, kein Tracking. Reines Musikerlebnis.", selectStation: "Sender auswählen", genreCountry: "Genre & Land", stationsTitle: "Sender", favorites: "Favoriten", share: "Teilen", searchPlaceholder: "Sender suchen...", searchCountryPlaceholder: "Land suchen...", linkCopied: "Link kopiert!", noFavorites: "Keine Favoriten.", bass: "Bass", mid: "Mitten", treble: "Höhen", songLoading: "Prüfen...", songError: "Keine Liedinformationen.", heroText: "Hören Sie Ihre Lieblingsradiosender aus aller Welt. Ohne Registrierung, ohne Werbung.", playNow: "Jetzt hören", quickPicks: "Schnellauswahl", sortClicks: "Meistgespielt", sortName: "Alphabetisch", sortVotes: "Stimmen", randomStation: "Zufälliges Radio" },
     it: { genres: "Generi Musicali", countries: "Paesi", all: "Tutte", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classica", lofi: "Lofi / Chill", news: "Notizie", loading: "Caricamento stazioni...", noStations: "Nessuna stazione trovata.", failed: "Caricamento fallito.", footer: "🔒 Nessun cookie, nessuna registrazione, nessun tracciamento. Pura esperienza musicale.", selectStation: "Seleziona una stazione", genreCountry: "Genere e Paese", stationsTitle: "Stazioni", favorites: "Preferiti", share: "Condividi", searchPlaceholder: "Cerca stazione...", searchCountryPlaceholder: "Cerca paese...", linkCopied: "Link copiato!", noFavorites: "Nessuna stazione preferita.", bass: "Bassi", mid: "Medi", treble: "Alti", songLoading: "Verifica...", songError: "Nessuna info sulla canzone.", heroText: "Ascolta le tue stazioni radio preferite da tutto il mondo. Nessuna registrazione, nessuna pubblicità.", playNow: "Ascolta ora", quickPicks: "Scelte rapide", sortClicks: "Più ascoltate", sortName: "Alfabetico", sortVotes: "Voti", randomStation: "Radio Casuale" },
-    pt: { genres: "Gêneros Musicais", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clássica", lofi: "Lofi / Chill", news: "Notícias", loading: "Carregando estações...", noStations: "Nenhuma estação encontrada.", failed: "Falha ao carregar.", footer: "🔒 Sem cookies, sem registro, sem rastreamento. Pura experiência musical.", selectStation: "Selecione uma estação", genreCountry: "Gênero e País", stationsTitle: "Estações", favorites: "Favoritos", share: "Compartilhar", searchPlaceholder: "Buscar estação...", searchCountryPlaceholder: "Buscar país...", linkCopied: "Link copiado!", noFavorites: "Nenhuma estação favorita.", bass: "Graves", mid: "Médios", treble: "Agudos", songLoading: "Verificando...", songError: "Nenhuma informação da música.", heroText: "Ouça suas estações de rádio favoritas de todo o mundo. Sem registro, sem anúncios.", playNow: "Ouvir agora", quickPicks: "Escolhas rápidas", sortClicks: "Mais tocadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Rádio Aleatoria" },
+    pt: { genres: "Gêneros Musicais", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clásica", lofi: "Lofi / Chill", news: "Notícias", loading: "Carregando estações...", noStations: "Nenhuma estação encontrada.", failed: "Falha ao carregar.", footer: "🔒 Sem cookies, sem registro, sem rastreamento. Pura experiência musical.", selectStation: "Selecione uma estação", genreCountry: "Gênero e País", stationsTitle: "Estações", favorites: "Favoritos", share: "Compartilhar", searchPlaceholder: "Buscar estação...", searchCountryPlaceholder: "Buscar país...", linkCopied: "Link copiado!", noFavorites: "Nenhuma estação favorita.", bass: "Graves", mid: "Médios", treble: "Agudos", songLoading: "Verificando...", songError: "Nenhuma informação da música.", heroText: "Ouça suas estações de rádio favoritas de todo o mundo. Sem registro, sem anúncios.", playNow: "Ouvir agora", quickPicks: "Escolhas rápidas", sortClicks: "Mais tocadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Rádio Aleatoria" },
     ru: { genres: "Музыкальные жанры", countries: "Страны", all: "Все", pop: "Поп", rock: "Рок", jazz: "Джаз", classical: "Классика", lofi: "Лофи / Чилл", news: "Новости", loading: "Загрузка станций...", noStations: "Станции не найдены.", failed: "Ошибка загрузки.", footer: "🔒 Без файлов cookie, без регистрации, без отслеживания. Чистый музыкальный опыт.", selectStation: "Выберите станцию", genreCountry: "Жанр и Страна", stationsTitle: "Станции", favorites: "Избранное", share: "Поделиться", searchPlaceholder: "Поиск станции...", searchCountryPlaceholder: "Поиск страны...", linkCopied: "Ссылка скопирована!", noFavorites: "Нет избранных станций.", bass: "Бас", mid: "Средние", treble: "Высокие", songLoading: "Проверка...", songError: "Нет информации о песне.", heroText: "Слушайте любимые радиостанции со всего мира. Без регистрации, без рекламы.", playNow: "Слушать сейчас", quickPicks: "Быстрый выбор", sortClicks: "Самые популярные", sortName: "По алфавиту", sortVotes: "Голоса", randomStation: "Случайное радио" },
     zh: { genres: "音乐流派", countries: "国家", all: "全部", pop: "流行", rock: "摇滚", jazz: "爵士", classical: "古典", lofi: "低保真 / 放松", news: "新闻", loading: "正在加载电台...", noStations: "未找到电台。", failed: "加载失败。", footer: "🔒 无Cookie，无注册，无跟踪。纯粹的音乐体验。", selectStation: "选择电台", genreCountry: "流派和国家", stationsTitle: "电台", favorites: "收藏", share: "分享", searchPlaceholder: "搜索电台...", searchCountryPlaceholder: "搜索国家...", linkCopied: "链接已复制！", noFavorites: "没有收藏的电台。", bass: "低音", mid: "中音", treble: "高音", songLoading: "检查中...", songError: "没有歌曲信息。", heroText: "收听来自世界各地的您最喜欢的广播电台。无需注册，无广告。", playNow: "立即收听", quickPicks: "快速选择", sortClicks: "最多播放", sortName: "字母顺序", sortVotes: "投票", randomStation: "随机电台" },
     ja: { genres: "音楽ジャンル", countries: "国", all: "すべて", pop: "ポップス", rock: "ロック", jazz: "ジャズ", classical: "クラシック", lofi: "ローファイ", news: "ニュース", loading: "ステーションを読み込み中...", noStations: "ステーションが見つかりません。", failed: "読み込みに失敗しました。", footer: "🔒 Cookie、登録、追跡なし。純粋な音楽体験。", selectStation: "ステーションを選択", genreCountry: "ジャンルと国", stationsTitle: "ステーション", favorites: "お気に入り", share: "共有", searchPlaceholder: "ステーションを検索...", searchCountryPlaceholder: "国を検索...", linkCopied: "リンクをコピーしました！", noFavorites: "お気に入りのステーションはありません。", bass: "低音", mid: "中音", treble: "高音", songLoading: "確認中...", songError: "曲の情報がありません。", heroText: "世界中のお気に入りのラジオ局を聴きましょう。登録不要、広告なし。", playNow: "今すぐ聴く", quickPicks: "クイックピック", sortClicks: "最も再生された", sortName: "アルファベット順", sortVotes: "投票", randomStation: "ランダムラジオ" }
@@ -507,6 +505,7 @@ playRandomGlobalBtn.addEventListener('click', async () => {
     }
 });
 
+// ======================== УПРАВЛЕНИЕ НА ПЛЕЪР, ЗВУК И MUTE ========================
 const playPauseBtn = document.getElementById('play-pause-btn');
 const seekSlider = document.getElementById('seek-slider');
 const currentTimeEl = document.getElementById('current-time');
@@ -514,12 +513,7 @@ const durationTimeEl = document.getElementById('duration-time');
 const volumeSlider = document.getElementById('volume-slider');
 const volumeIcon = document.getElementById('volume-icon');
 
-function formatTime(seconds) {
-    if (isNaN(seconds)) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
-}
+let lastVolume = 1;
 
 playPauseBtn.addEventListener('click', () => {
     if (audioStream.paused) {
@@ -539,41 +533,118 @@ audioStream.addEventListener('pause', () => {
 audioStream.addEventListener('timeupdate', () => {
     const percent = (audioStream.currentTime / audioStream.duration) * 100;
     seekSlider.value = percent || 0;
-    currentTimeEl.textContent = formatTime(audioStream.currentTime);
-});
-
-audioStream.addEventListener('loadedmetadata', () => {
-    durationTimeEl.textContent = formatTime(audioStream.duration);
-});
-
-seekSlider.addEventListener('input', () => {
-    const time = (seekSlider.value / 100) * audioStream.duration;
-    audioStream.currentTime = time;
 });
 
 volumeSlider.addEventListener('input', (e) => {
     audioStream.volume = e.target.value;
-    if (audioStream.volume === 0) {
-        volumeIcon.className = 'fa-solid fa-volume-xmark';
-    } else if (audioStream.volume < 0.5) {
-        volumeIcon.className = 'fa-solid fa-volume-low';
-    } else {
-        volumeIcon.className = 'fa-solid fa-volume-high';
-    }
+    updateVolumeIcon(audioStream.volume);
 });
 
 volumeIcon.addEventListener('click', () => {
     if (audioStream.volume > 0) {
+        lastVolume = audioStream.volume;
         audioStream.volume = 0;
         volumeSlider.value = 0;
-        volumeIcon.className = 'fa-solid fa-volume-xmark';
     } else {
-        audioStream.volume = 1;
-        volumeSlider.value = 1;
-        volumeIcon.className = 'fa-solid fa-volume-high';
+        audioStream.volume = lastVolume || 1;
+        volumeSlider.value = audioStream.volume;
     }
+    updateVolumeIcon(audioStream.volume);
 });
 
+function updateVolumeIcon(vol) {
+    if (vol === 0) {
+        volumeIcon.innerHTML = '<i class="fa-solid fa-volume-xmark"></i>';
+    } else if (vol < 0.5) {
+        volumeIcon.innerHTML = '<i class="fa-solid fa-volume-low"></i>';
+    } else {
+        volumeIcon.innerHTML = '<i class="fa-solid fa-volume-high"></i>';
+    }
+}
+
+// ======================== СЪН ТАЙМЕР ЛОГИКА ========================
+const sleepTimerBtn = document.getElementById('sleep-timer-btn');
+const sleepTimerMenu = document.getElementById('sleep-timer-menu');
+const timerCountdown = document.getElementById('timer-countdown');
+let sleepTimerInterval = null;
+
+sleepTimerBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    sleepTimerMenu.classList.toggle('show');
+});
+
+document.addEventListener('click', () => {
+    sleepTimerMenu.classList.remove('show');
+});
+
+document.querySelectorAll('.timer-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mins = parseInt(btn.getAttribute('data-mins'));
+        setSleepTimer(mins);
+        sleepTimerMenu.classList.remove('show');
+    });
+});
+
+function setSleepTimer(mins) {
+    if (sleepTimerInterval) clearInterval(sleepTimerInterval);
+    
+    if (mins === 0) {
+        timerCountdown.style.display = 'none';
+        sleepTimerBtn.style.color = 'inherit';
+        return;
+    }
+
+    sleepTimerBtn.style.color = 'var(--accent)';
+    timerCountdown.style.display = 'block';
+    
+    let timeLeft = mins * 60;
+    
+    sleepTimerInterval = setInterval(() => {
+        let m = Math.floor(timeLeft / 60);
+        let s = timeLeft % 60;
+        timerCountdown.textContent = `Остават: ${m}:${s < 10 ? '0' : ''}${s}`;
+        
+        if (timeLeft <= 0) {
+            clearInterval(sleepTimerInterval);
+            audioStream.pause();
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            timerCountdown.style.display = 'none';
+            sleepTimerBtn.style.color = 'inherit';
+        }
+        timeLeft--;
+    }, 1000);
+}
+
+// ======================== ВИЗУАЛИЗАТОР НА ЦЯЛ ЕКРАН ========================
+const fullscreenVisBtn = document.getElementById('fullscreen-vis-btn');
+const visualizerBox = document.getElementById('visualizer-box');
+const fullscreenModal = document.getElementById('fullscreen-modal');
+const closeFullscreen = document.getElementById('close-fullscreen');
+const fsVisualizerCanvas = document.getElementById('fullscreen-visualizer');
+const fsStationName = document.getElementById('fs-station-name');
+
+function openFullscreenVisualizer() {
+    if (!currentStation) return;
+    fullscreenModal.classList.add('show');
+    fsStationName.textContent = cleanString(currentStation.name);
+    startFullscreenVisualizer(fsVisualizerCanvas);
+}
+
+fullscreenVisBtn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    openFullscreenVisualizer();
+});
+
+visualizerBox.addEventListener('click', () => {
+    openFullscreenVisualizer();
+});
+
+closeFullscreen.addEventListener('click', () => {
+    fullscreenModal.classList.remove('show');
+    stopFullscreenVisualizer();
+});
+
+// ======================== СТАРТИРАНЕ ========================
 document.addEventListener('DOMContentLoaded', async () => {
     updateLanguage();
     renderFavorites();
