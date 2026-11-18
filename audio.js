@@ -55,7 +55,6 @@ function saveEq() {
     }));
 }
 
-// Красив и модерен визуализатор
 export function startVisualizer(canvas) {
     if (!canvas) return;
     if (visualizerRAF) cancelAnimationFrame(visualizerRAF);
@@ -73,25 +72,20 @@ export function startVisualizer(canvas) {
         ctx.clearRect(0, 0, w, h);
 
         const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#38bdf8';
-        
-        const barWidth = 4;
-        const gap = 3;
-        const totalBars = Math.floor(w / (barWidth + gap));
+        ctx.fillStyle = accent;
+
+        const barWidth = 6; 
+        const gap = 4;      
+        const totalBars = Math.floor(w / (barWidth + gap)); 
         
         let x = 0;
         for (let i = 0; i < totalBars; i++) {
-            const value = dataArray[i] || 10;
+            const value = dataArray[i] || 0;
             let barHeight = (value / 255) * h;
             if (barHeight < 4) barHeight = 4;
 
-            // Създаване на красив неонов градиент за всяка лента
-            let gradient = ctx.createLinearGradient(0, h, 0, 0);
-            gradient.addColorStop(0, accent);
-            gradient.addColorStop(1, '#a855f7');
-
-            ctx.fillStyle = gradient;
             ctx.beginPath();
-            ctx.roundRect(x, h - barHeight, barWidth, barHeight, [2, 2, 0, 0]);
+            ctx.roundRect(x, h - barHeight, barWidth, barHeight, [3, 3, 0, 0]);
             ctx.fill();
 
             x += barWidth + gap;
@@ -100,7 +94,6 @@ export function startVisualizer(canvas) {
     draw();
 }
 
-// Визуализатор на цял екран
 export function startFullscreenVisualizer(canvas) {
     if (!canvas) return;
     if (fsVisualizerRAF) cancelAnimationFrame(fsVisualizerRAF);
@@ -124,7 +117,7 @@ export function startFullscreenVisualizer(canvas) {
         const gap = 6;
         const totalBars = Math.floor(w / (barWidth + gap));
         
-        let x = (w - (totalBars * (barWidth + gap))) / 2; // Центриране
+        let x = (w - (totalBars * (barWidth + gap))) / 2;
 
         for (let i = 0; i < totalBars; i++) {
             const value = dataArray[i] || 10;
@@ -133,7 +126,6 @@ export function startFullscreenVisualizer(canvas) {
 
             let gradient = ctx.createLinearGradient(0, h, 0, 0);
             gradient.addColorStop(0, '#38bdf8');
-            gradient.addColorStop(0.5, '#ec4899');
             gradient.addColorStop(1, '#a855f7');
 
             ctx.fillStyle = gradient;
