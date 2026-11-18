@@ -2,28 +2,28 @@
 
 :root {
     --bg-main: #0f172a;
-    --bg-sidebar: #1e293b;
-    --bg-card: #1e293b;
-    --bg-card-hover: #334155;
+    --bg-sidebar: rgba(30, 41, 59, 0.85);
+    --bg-card: rgba(30, 41, 59, 0.75);
+    --bg-card-hover: rgba(51, 65, 85, 0.9);
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --accent: #38bdf8;
     --accent-hover: #0ea5e9;
-    --border: #334155;
-    --player-bg: #090d16;
+    --border: rgba(51, 65, 85, 0.6);
+    --player-bg: rgba(9, 13, 22, 0.95);
 }
 
 body.light-theme {
     --bg-main: #f1f5f9;
-    --bg-sidebar: #ffffff;
-    --bg-card: #ffffff;
-    --bg-card-hover: #e2e8f0;
+    --bg-sidebar: rgba(255, 255, 255, 0.85);
+    --bg-card: rgba(255, 255, 255, 0.8);
+    --bg-card-hover: rgba(226, 232, 240, 0.9);
     --text-main: #0f172a;
     --text-muted: #64748b;
     --accent: #0284c7;
     --accent-hover: #0369a1;
-    --border: #cbd5e1;
-    --player-bg: #ffffff;
+    --border: rgba(203, 213, 225, 0.8);
+    --player-bg: rgba(255, 255, 255, 0.95);
 }
 
 * {
@@ -34,6 +34,10 @@ body.light-theme {
 }
 
 body {
+    background-image: url('bg-dark.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
     background-color: var(--bg-main);
     color: var(--text-main);
     height: 100vh;
@@ -42,16 +46,22 @@ body {
     overflow: hidden;
 }
 
+body.light-theme {
+    background-image: url('bg-light.jpg');
+}
+
 /* Header */
 .header {
     height: 70px;
     background-color: var(--bg-sidebar);
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 24px;
     flex-shrink: 0;
+    z-index: 40;
 }
 
 .logo {
@@ -79,12 +89,16 @@ body {
 .search-bar input {
     width: 100%;
     padding: 10px 14px 10px 40px;
-    background-color: var(--bg-main);
+    background-color: rgba(15, 23, 42, 0.5);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text-main);
     font-size: 0.9rem;
     outline: none;
+}
+
+body.light-theme .search-bar input {
+    background-color: rgba(241, 245, 249, 0.7);
 }
 
 .search-bar input:focus {
@@ -119,7 +133,7 @@ body {
 }
 
 .lang-btn {
-    background: var(--bg-main);
+    background: var(--bg-card);
     border: 1px solid var(--border);
     color: var(--text-main);
     padding: 6px 12px;
@@ -175,6 +189,7 @@ body {
 .sidebar {
     width: 280px;
     background-color: var(--bg-sidebar);
+    backdrop-filter: blur(10px);
     border-right: 1px solid var(--border);
     padding: 20px;
     overflow-y: auto;
@@ -251,13 +266,14 @@ body {
 }
 
 .hero-banner {
-    background: linear-gradient(135deg, #1e293b, #0f172a);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
     border: 1px solid var(--border);
     border-radius: 16px;
     padding: 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
+    backdrop-filter: blur(5px);
 }
 
 .hero-text h1 {
@@ -328,7 +344,7 @@ body {
 }
 
 .quick-pick-item {
-    background-color: var(--bg-sidebar);
+    background-color: var(--bg-card);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 8px;
@@ -398,6 +414,7 @@ body {
 
 .station-card {
     background-color: var(--bg-card);
+    backdrop-filter: blur(5px);
     border: 1px solid var(--border);
     border-radius: 12px;
     padding: 16px;
@@ -453,7 +470,7 @@ body {
 }
 
 .tag {
-    background-color: var(--bg-main);
+    background-color: rgba(15, 23, 42, 0.4);
     color: var(--text-muted);
     font-size: 0.65rem;
     padding: 2px 6px;
@@ -478,6 +495,7 @@ body {
 .player-bar {
     height: 90px;
     background-color: var(--player-bg);
+    backdrop-filter: blur(15px);
     border-top: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -630,7 +648,7 @@ body {
     display: flex;
     align-items: center;
     gap: 6px;
-    background-color: var(--bg-main);
+    background-color: rgba(15, 23, 42, 0.4);
     padding: 4px 8px;
     border-radius: 8px;
     border: 1px solid var(--border);
