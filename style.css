@@ -3,31 +3,31 @@
 
 :root {
     --bg-main: #0f172a;
-    --bg-sidebar: rgba(30, 41, 59, 0.85);
-    --bg-card: rgba(30, 41, 59, 0.75);
-    --bg-card-hover: rgba(51, 65, 85, 0.9);
+    --bg-sidebar: rgba(15, 23, 42, 0.40);
+    --bg-card: rgba(30, 41, 59, 0.30);
+    --bg-card-hover: rgba(51, 65, 85, 0.50);
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --accent: #38bdf8;
     --accent-hover: #0ea5e9;
-    --border: rgba(51, 65, 85, 0.6);
-    --player-bg: rgba(9, 13, 22, 0.95);
-    --input-bg: rgba(15, 23, 42, 0.8);
-    --glass-blur: blur(10px);
+    --border: rgba(255, 255, 255, 0.15);
+    --player-bg: rgba(15, 23, 42, 0.85);
+    --input-bg: rgba(15, 23, 42, 0.4);
+    --glass-blur: blur(20px);
 }
 
 body.light-theme {
     --bg-main: #f1f5f9;
-    --bg-sidebar: rgba(255, 255, 255, 0.85);
-    --bg-card: rgba(255, 255, 255, 0.8);
-    --bg-card-hover: rgba(226, 232, 240, 0.9);
+    --bg-sidebar: rgba(255, 255, 255, 0.50);
+    --bg-card: rgba(255, 255, 255, 0.40);
+    --bg-card-hover: rgba(255, 255, 255, 0.70);
     --text-main: #0f172a;
     --text-muted: #64748b;
     --accent: #0284c7;
     --accent-hover: #0369a1;
-    --border: rgba(203, 213, 225, 0.8);
-    --player-bg: rgba(255, 255, 255, 0.95);
-    --input-bg: rgba(241, 245, 249, 0.9);
+    --border: rgba(255, 255, 255, 0.5);
+    --player-bg: rgba(255, 255, 255, 0.90);
+    --input-bg: rgba(255, 255, 255, 0.5);
 }
 
 * {
@@ -59,6 +59,7 @@ body.light-theme {
     height: 70px;
     background-color: var(--bg-sidebar);
     backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
     border-bottom: 1px solid var(--border);
     display: flex;
     align-items: center;
@@ -84,14 +85,14 @@ body.light-theme {
 }
 
 .icon-btn {
-    background: transparent;
-    border: none;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
     color: var(--text-main);
     font-size: 1.1rem;
     cursor: pointer;
     padding: 8px;
     border-radius: 50%;
-    transition: background 0.2s;
+    transition: all 0.2s;
 }
 
 .icon-btn:hover {
@@ -99,7 +100,6 @@ body.light-theme {
     color: var(--accent);
 }
 
-/* Privacy Badge */
 .privacy-badge {
     font-size: 0.8rem;
     color: var(--text-muted);
@@ -107,12 +107,13 @@ body.light-theme {
     padding: 6px 12px;
     border-radius: 20px;
     border: 1px solid var(--border);
+    backdrop-filter: var(--glass-blur);
     display: flex;
     align-items: center;
     gap: 6px;
 }
 
-/* Custom Language Selector */
+/* Language Selector */
 .custom-lang-select {
     position: relative;
 }
@@ -124,6 +125,7 @@ body.light-theme {
     padding: 6px 12px;
     border-radius: 6px;
     cursor: pointer;
+    backdrop-filter: var(--glass-blur);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -135,9 +137,10 @@ body.light-theme {
     top: 100%;
     right: 0;
     background: var(--bg-sidebar);
+    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     border-radius: 8px;
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.3);
+    box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     display: none;
     flex-direction: column;
     width: 150px;
@@ -168,11 +171,12 @@ body.light-theme {
     display: flex;
     flex: 1;
     overflow: hidden;
+    padding-bottom: 95px; /* Място отдолу за плаващия плейър */
 }
 
 /* Sidebar */
 .sidebar {
-    width: 300px;
+    width: 280px;
     background-color: var(--bg-sidebar);
     backdrop-filter: var(--glass-blur);
     border-right: 1px solid var(--border);
@@ -233,7 +237,7 @@ body.light-theme {
 
 .cat-btn {
     background: transparent;
-    border: none;
+    border: 1px solid transparent;
     color: var(--text-main);
     text-align: left;
     padding: 8px 12px;
@@ -261,7 +265,7 @@ body.light-theme {
     display: flex;
     flex-direction: column;
     gap: 4px;
-    max-height: 200px;
+    max-height: 180px;
     overflow-y: auto;
 }
 
@@ -277,30 +281,24 @@ body.light-theme {
 
 .dashboard-top {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr;
     gap: 20px;
 }
 
-@media (max-width: 1024px) {
-    .dashboard-top {
-        grid-template-columns: 1fr;
-    }
-}
-
 .hero-section {
-    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.9));
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 30px;
+    padding: 24px;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    backdrop-filter: var(--glass-blur);
 }
 
 .hero-content h1 {
-    font-size: 2rem;
-    margin-bottom: 16px;
+    font-size: 1.8rem;
+    margin-bottom: 12px;
     font-family: 'Montserrat', sans-serif;
 }
 
@@ -319,117 +317,95 @@ body.light-theme {
     align-items: center;
     gap: 8px;
     font-size: 0.9rem;
-    border: none;
-    transition: transform 0.1s;
+    border: 1px solid var(--border);
 }
 
 .hero-btn {
     background-color: var(--accent);
     color: #0f172a;
-}
-
-.hero-btn:hover {
-    background-color: var(--accent-hover);
+    border-color: var(--accent);
 }
 
 .hero-btn-secondary {
-    background-color: var(--bg-card-hover);
-    color: var(--text-main);
-    border: 1px solid var(--border);
-}
-
-.hero-btn-secondary:hover {
-    background-color: var(--border);
-}
-
-/* Player Card */
-.player-card {
     background-color: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
+    color: var(--text-main);
 }
 
+/* === ФИКСИРАН БАЛАНСИРАН ДОЛЕН ПЛЕЙЪР (С Екстрите, Без Таговете) === */
+.player-card {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--player-bg);
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+    border-top: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    z-index: 100;
+    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+}
+
+/* 1. Лява част: Станция, лого и име (кратко и чисто) */
 .now-playing-info {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
+    min-width: 200px;
+    max-width: 260px;
 }
 
 .now-playing-info img {
-    width: 60px;
-    height: 60px;
-    min-width: 60px;
-    min-height: 60px;
-    border-radius: 12px;
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+    border-radius: 10px;
     object-fit: cover;
     background-color: #000;
-}
-
-.now-playing-info h2 {
-    font-size: 1.1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 250px;
-}
-
-.now-playing-info p {
-    font-size: 0.8rem;
-    color: var(--text-muted);
-}
-
-.now-playing-song {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 0.8rem;
-    color: var(--accent);
-    background: rgba(56, 189, 248, 0.1);
-    padding: 6px 10px;
-    border-radius: 6px;
-}
-
-.visualizer-wrapper {
-    width: 100%;
-    background: rgba(0,0,0,0.3);
-    border-radius: 8px;
-    overflow: hidden;
     border: 1px solid var(--border);
 }
 
-.visualizer-wrapper canvas {
-    width: 100%;
-    height: 60px;
-    display: block;
+.now-playing-info h2 {
+    font-size: 0.95rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.eq-controls {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex-wrap: wrap;
+.now-playing-info p {
     font-size: 0.75rem;
     color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-.eq-controls input[type="range"] {
-    width: 65px;
-    accent-color: var(--accent);
-    cursor: pointer;
+/* Скриваме досадното поле за песен тук или го правим елегантно ако има нужда */
+.now-playing-song {
+    display: none;
 }
 
+/* Малкият визуализатор в долната лента се скрива за баланс, остава този на цял екран */
+.visualizer-wrapper {
+    display: none;
+}
+
+/* 2. Централна част: Бутон за пускане, време и слайдер */
 .custom-player {
     display: flex;
     align-items: center;
     gap: 12px;
-    background: rgba(15, 23, 42, 0.4);
-    padding: 10px;
-    border-radius: 8px;
+    flex: 1;
+    max-width: 450px;
+    background: rgba(15, 23, 42, 0.3);
+    padding: 6px 12px;
+    border-radius: 10px;
     border: 1px solid var(--border);
 }
 
@@ -446,6 +422,7 @@ body.light-theme {
     justify-content: center;
     font-size: 0.9rem;
     flex-shrink: 0;
+    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
 }
 
 .player-btn:hover {
@@ -464,6 +441,25 @@ body.light-theme {
     cursor: pointer;
 }
 
+/* 3. Дясна част: Еквалайзер, Звук и Сън таймер (Глезотиите) */
+.eq-controls {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    background: rgba(15, 23, 42, 0.3);
+    padding: 6px 12px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+}
+
+.eq-controls input[type="range"] {
+    width: 50px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
 .volume-container {
     display: flex;
     align-items: center;
@@ -477,18 +473,18 @@ body.light-theme {
 }
 
 .share-btn {
-    background: transparent;
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     color: var(--text-main);
-    padding: 8px;
+    padding: 8px 12px;
     border-radius: 8px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: background 0.2s;
+    gap: 6px;
+    white-space: nowrap;
 }
 
 .share-btn:hover:not(:disabled) {
@@ -497,7 +493,7 @@ body.light-theme {
 }
 
 .share-btn:disabled {
-    opacity: 0.5;
+    opacity: 0.4;
     cursor: not-allowed;
 }
 
@@ -517,8 +513,9 @@ body.light-theme {
 
 .quick-pick-item {
     background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
-    border-radius: 10px;
+    border-radius: 12px;
     padding: 8px;
     display: flex;
     flex-direction: column;
@@ -527,12 +524,6 @@ body.light-theme {
     cursor: pointer;
     width: 80px;
     flex-shrink: 0;
-    transition: transform 0.2s;
-}
-
-.quick-pick-item:hover {
-    transform: translateY(-2px);
-    border-color: var(--accent);
 }
 
 .quick-pick-item img {
@@ -540,6 +531,7 @@ body.light-theme {
     height: 40px;
     border-radius: 50%;
     object-fit: cover;
+    border: 1px solid var(--border);
 }
 
 .quick-pick-item span {
@@ -556,7 +548,7 @@ body.light-theme {
     display: flex;
     flex-direction: column;
     gap: 15px;
-    padding-bottom: 20px;
+    padding-bottom: 30px;
 }
 
 .stations-header {
@@ -594,7 +586,7 @@ body.light-theme {
 
 #stations-container {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
     gap: 16px;
 }
 
@@ -602,29 +594,30 @@ body.light-theme {
     background-color: var(--bg-card);
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 16px;
+    border-radius: 14px;
+    padding: 14px;
     display: flex;
     align-items: center;
-    gap: 14px;
+    gap: 12px;
     cursor: pointer;
     position: relative;
-    transition: all 0.2s;
+    transition: all 0.25s ease;
 }
 
 .station-card:hover {
     background-color: var(--bg-card-hover);
     border-color: var(--accent);
-    transform: translateY(-2px);
+    transform: translateY(-3px);
 }
 
 .station-logo {
-    width: 50px;
-    height: 50px;
+    width: 48px;
+    height: 48px;
     border-radius: 10px;
     object-fit: cover;
     background-color: #000;
     flex-shrink: 0;
+    border: 1px solid var(--border);
 }
 
 .station-info-text {
@@ -633,7 +626,7 @@ body.light-theme {
 }
 
 .station-info-text h4 {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -646,7 +639,7 @@ body.light-theme {
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    margin-bottom: 6px;
+    margin-bottom: 4px;
 }
 
 .station-tags {
@@ -656,7 +649,7 @@ body.light-theme {
 }
 
 .tag {
-    background-color: rgba(15, 23, 42, 0.4);
+    background-color: rgba(255, 255, 255, 0.05);
     color: var(--text-muted);
     font-size: 0.65rem;
     padding: 2px 6px;
@@ -677,16 +670,58 @@ body.light-theme {
     color: #ef4444;
 }
 
-/* Footer */
 .footer {
-    height: 40px;
-    background-color: var(--bg-sidebar);
-    border-top: 1px solid var(--border);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    flex-shrink: 0;
-    z-index: 40;
+    display: none;
+}
+
+/* === МОБИЛНИ УСТРОЙСТВА === */
+@media (max-width: 1024px) {
+    .eq-controls {
+        display: none; /* Скриваме еквалайзера на по-малки екрани, за да има супер баланс */
+    }
+}
+
+@media (max-width: 768px) {
+    .main-container {
+        flex-direction: column;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-height: 160px;
+        border-right: none;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .content-area {
+        padding: 12px;
+        padding-bottom: 130px;
+    }
+
+    .player-card {
+        flex-direction: column;
+        padding: 10px 15px;
+        gap: 8px;
+        border-radius: 20px 20px 0 0;
+    }
+
+    .now-playing-info {
+        width: 100%;
+        max-width: 100%;
+        justify-content: flex-start;
+    }
+
+    .custom-player {
+        width: 100%;
+        max-width: 100%;
+    }
+
+    .volume-container {
+        display: none;
+    }
+
+    .share-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }

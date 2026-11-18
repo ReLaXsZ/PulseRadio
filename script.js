@@ -511,7 +511,6 @@ playRandomGlobalBtn.addEventListener('click', async () => {
 const playPauseBtn = document.getElementById('play-pause-btn');
 const seekSlider = document.getElementById('seek-slider');
 const currentTimeEl = document.getElementById('current-time');
-const durationTimeEl = document.getElementById('duration-time');
 const volumeSlider = document.getElementById('volume-slider');
 const volumeIcon = document.getElementById('volume-icon');
 
@@ -533,18 +532,14 @@ audioStream.addEventListener('pause', () => {
 });
 
 audioStream.addEventListener('timeupdate', () => {
-    const percent = (audioStream.currentTime / audioStream.duration) * 100;
-    seekSlider.value = percent || 0;
     currentTimeEl.textContent = formatTime(audioStream.currentTime);
 });
 
-audioStream.addEventListener('loadedmetadata', () => {
-    durationTimeEl.textContent = formatTime(audioStream.duration);
-});
-
 seekSlider.addEventListener('input', () => {
-    const time = (seekSlider.value / 100) * audioStream.duration;
-    audioStream.currentTime = time;
+    if (audioStream.duration && !isNaN(audioStream.duration)) {
+        const time = (seekSlider.value / 100) * audioStream.duration;
+        audioStream.currentTime = time;
+    }
 });
 
 volumeSlider.addEventListener('input', (e) => {

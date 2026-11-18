@@ -167,7 +167,7 @@
                         <audio id="audio-stream" crossorigin="anonymous"></audio>
                         <button id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
                         <div class="time-display">
-                            <span id="current-time">0:00</span> / <span id="duration-time">0:00</span>
+                            <span id="current-time">0:00</span>
                         </div>
                         <input type="range" id="seek-slider" class="seek-slider" value="0" min="0" max="100" step="0.1">
                         <div class="volume-container">
@@ -206,7 +206,6 @@
 
     </main>
 
-    <!-- Модален прозорец за цял екран визуализатор -->
     <div id="fullscreen-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11, 15, 25, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
         <button id="close-fullscreen" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
         <h2 id="fs-station-name" style="color: #fff; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Радио станция</h2>
