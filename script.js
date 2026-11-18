@@ -68,7 +68,7 @@ const translations = {
     fr: { genres: "Genres Musicaux", countries: "Pays", all: "Toutes", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classique", lofi: "Lofi / Chill", news: "Actualités", loading: "Chargement des stations...", noStations: "Aucune station trouvée.", failed: "Échec du chargement.", footer: "🔒 Sans cookies, sans inscription, sans suivi. Pure expérience musicale.", selectStation: "Sélectionnez une station", genreCountry: "Genre et Pays", stationsTitle: "Stations", favorites: "Favoris", share: "Partager", searchPlaceholder: "Rechercher une station...", searchCountryPlaceholder: "Rechercher un pays...", linkCopied: "Lien copié !", noFavorites: "Aucune station favorite.", bass: "Basses", mid: "Médiums", treble: "Aigus", songLoading: "Vérification...", songError: "Aucune info sur la chanson.", heroText: "Écoutez vos stations de radio préférées du monde entier. Sans inscription, sans publicité.", playNow: "Écouter maintenant", quickPicks: "Choix rapides", sortClicks: "Les plus écoutées", sortName: "Alphabétique", sortVotes: "Votes", randomStation: "Radio Aléatoire" },
     de: { genres: "Musikgenres", countries: "Länder", all: "Alle", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Klassik", lofi: "Lofi / Chill", news: "Nachrichten", loading: "Sender werden geladen...", noStations: "Keine Sender gefunden.", failed: "Laden fehlgeschlagen.", footer: "🔒 Keine Cookies, keine Registrierung, kein Tracking. Reines Musikerlebnis.", selectStation: "Sender auswählen", genreCountry: "Genre & Land", stationsTitle: "Sender", favorites: "Favoriten", share: "Teilen", searchPlaceholder: "Sender suchen...", searchCountryPlaceholder: "Land suchen...", linkCopied: "Link kopiert!", noFavorites: "Keine Favoriten.", bass: "Bass", mid: "Mitten", treble: "Höhen", songLoading: "Prüfen...", songError: "Keine Liedinformationen.", heroText: "Hören Sie Ihre Lieblingsradiosender aus aller Welt. Ohne Registrierung, ohne Werbung.", playNow: "Jetzt hören", quickPicks: "Schnellauswahl", sortClicks: "Meistgespielt", sortName: "Alphabetisch", sortVotes: "Stimmen", randomStation: "Zufälliges Radio" },
     it: { genres: "Generi Musicali", countries: "Paesi", all: "Tutte", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classica", lofi: "Lofi / Chill", news: "Notizie", loading: "Caricamento stazioni...", noStations: "Nessuna stazione trovata.", failed: "Caricamento fallito.", footer: "🔒 Nessun cookie, nessuna registrazione, nessun tracciamento. Pura esperienza musicale.", selectStation: "Seleziona una stazione", genreCountry: "Genere e Paese", stationsTitle: "Stazioni", favorites: "Preferiti", share: "Condividi", searchPlaceholder: "Cerca stazione...", searchCountryPlaceholder: "Cerca paese...", linkCopied: "Link copiato!", noFavorites: "Nessuna stazione preferita.", bass: "Bassi", mid: "Medi", treble: "Alti", songLoading: "Verifica...", songError: "Nessuna info sulla canzone.", heroText: "Ascolta le tue stazioni radio preferite da tutto il mondo. Nessuna registrazione, nessuna pubblicità.", playNow: "Ascolta ora", quickPicks: "Scelte rapide", sortClicks: "Più ascoltate", sortName: "Alfabetico", sortVotes: "Voti", randomStation: "Radio Casuale" },
-    pt: { genres: "Gêneros Musicais", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clássica", lofi: "Lofi / Chill", news: "Notícias", loading: "Carregando estações...", noStations: "Nenhuma estação encontrada.", failed: "Falha ao carregar.", footer: "🔒 Sem cookies, sem registro, sem rastreamento. Pura experiência musical.", selectStation: "Selecione uma estação", genreCountry: "Gênero e País", stationsTitle: "Estações", favorites: "Favoritos", share: "Compartilhar", searchPlaceholder: "Buscar estação...", searchCountryPlaceholder: "Buscar país...", linkCopied: "Link copiado!", noFavorites: "Nenhuma estação favorita.", bass: "Graves", mid: "Médios", treble: "Agudos", songLoading: "Verificando...", songError: "Nenhuma informação da música.", heroText: "Ouça suas estações de rádio favoritas de todo o mundo. Sem registro, sem anúncios.", playNow: "Ouvir agora", quickPicks: "Escolhas rápidas", sortClicks: "Mais tocadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Rádio Aleatória" },
+    pt: { genres: "Gêneros Musicais", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clássica", lofi: "Lofi / Chill", news: "Notícias", loading: "Carregando estações...", noStations: "Nenhuma estação encontrada.", failed: "Falha ao carregar.", footer: "🔒 Sem cookies, sem registro, sem rastreamento. Pura experiência musical.", selectStation: "Selecione uma estação", genreCountry: "Gênero e País", stationsTitle: "Estações", favorites: "Favoritos", share: "Compartilhar", searchPlaceholder: "Buscar estação...", searchCountryPlaceholder: "Buscar país...", linkCopied: "Link copiado!", noFavorites: "Nenhuma estação favorita.", bass: "Graves", mid: "Médios", treble: "Agudos", songLoading: "Verificando...", songError: "Nenhuma informação da música.", heroText: "Ouça suas estações de rádio favoritas de todo o mundo. Sem registro, sem anúncios.", playNow: "Ouvir agora", quickPicks: "Escolhas rápidas", sortClicks: "Mais tocadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Rádio Aleatoria" },
     ru: { genres: "Музыкальные жанры", countries: "Страны", all: "Все", pop: "Поп", rock: "Рок", jazz: "Джаз", classical: "Классика", lofi: "Лофи / Чилл", news: "Новости", loading: "Загрузка станций...", noStations: "Станции не найдены.", failed: "Ошибка загрузки.", footer: "🔒 Без файлов cookie, без регистрации, без отслеживания. Чистый музыкальный опыт.", selectStation: "Выберите станцию", genreCountry: "Жанр и Страна", stationsTitle: "Станции", favorites: "Избранное", share: "Поделиться", searchPlaceholder: "Поиск станции...", searchCountryPlaceholder: "Поиск страны...", linkCopied: "Ссылка скопирована!", noFavorites: "Нет избранных станций.", bass: "Бас", mid: "Средние", treble: "Высокие", songLoading: "Проверка...", songError: "Нет информации о песне.", heroText: "Слушайте любимые радиостанции со всего мира. Без регистрации, без рекламы.", playNow: "Слушать сейчас", quickPicks: "Быстрый выбор", sortClicks: "Самые популярные", sortName: "По алфавиту", sortVotes: "Голоса", randomStation: "Случайное радио" },
     zh: { genres: "音乐流派", countries: "国家", all: "全部", pop: "流行", rock: "摇滚", jazz: "爵士", classical: "古典", lofi: "低保真 / 放松", news: "新闻", loading: "正在加载电台...", noStations: "未找到电台。", failed: "加载失败。", footer: "🔒 无Cookie，无注册，无跟踪。纯粹的音乐体验。", selectStation: "选择电台", genreCountry: "流派和国家", stationsTitle: "电台", favorites: "收藏", share: "分享", searchPlaceholder: "搜索电台...", searchCountryPlaceholder: "搜索国家...", linkCopied: "链接已复制！", noFavorites: "没有收藏的电台。", bass: "低音", mid: "中音", treble: "高音", songLoading: "检查中...", songError: "没有歌曲信息。", heroText: "收听来自世界各地的您最喜欢的广播电台。无需注册，无广告。", playNow: "立即收听", quickPicks: "快速选择", sortClicks: "最多播放", sortName: "字母顺序", sortVotes: "投票", randomStation: "随机电台" },
     ja: { genres: "音楽ジャンル", countries: "国", all: "すべて", pop: "ポップス", rock: "ロック", jazz: "ジャズ", classical: "クラシック", lofi: "ローファイ", news: "ニュース", loading: "ステーションを読み込み中...", noStations: "ステーションが見つかりません。", failed: "読み込みに失敗しました。", footer: "🔒 Cookie、登録、追跡なし。純粋な音楽体験。", selectStation: "ステーションを選択", genreCountry: "ジャンルと国", stationsTitle: "ステーション", favorites: "お気に入り", share: "共有", searchPlaceholder: "ステーションを検索...", searchCountryPlaceholder: "国を検索...", linkCopied: "リンクをコピーしました！", noFavorites: "お気に入りのステーションはありません。", bass: "低音", mid: "中音", treble: "高音", songLoading: "確認中...", songError: "曲の情報がありません。", heroText: "世界中のお気に入りのラジオ局を聴きましょう。登録不要、広告なし。", playNow: "今すぐ聴く", quickPicks: "クイックピック", sortClicks: "最も再生された", sortName: "アルファベット順", sortVotes: "投票", randomStation: "ランダムラジオ" }
@@ -92,13 +92,16 @@ function updateLanguage() {
     renderFavorites();
 }
 
-// ======================== ПОМОЩНИ ФУНКЦИИ ========================
+// ======================== ПОМОЩНИ ФУНКЦИИ И СИГУРНОСТ (XSS SANITIZATION) ========================
 function cleanString(str) {
     if (!str) return '';
-    let text = str.trim();
+    let text = str.toString().trim();
     text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
     text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
-    return text || 'Unknown Station';
+    
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML || 'Unknown Station';
 }
 
 function getFavorites() { return JSON.parse(localStorage.getItem('radio_favorites') || '[]'); }
@@ -144,9 +147,9 @@ async function loadTopStations(type = 'global', query = '') {
     let url = `${API_BASE}/topclick/8`;
     
     if (type === 'country' && query) {
-        url = `${API_BASE}/bycountry/${query}?limit=8&order=clickcount&reverse=true`;
+        url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
     } else if (type === 'genre' && query !== 'all') {
-        url = `${API_BASE}/bytag/${query}?limit=8&order=clickcount&reverse=true`;
+        url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
     }
 
     try {
@@ -199,19 +202,29 @@ function updateThemeIcon() {
     icon.className = document.body.classList.contains('light-theme') ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
 }
 
-// ======================== API ЗАРЕЖДАНЕ (СЪС СОРТИРАНЕ) ========================
+// ======================== API ЗАРЕЖДАНЕ (С КЕШИРАНЕ В SESSIONSTORAGE И СОРТИРАНЕ) ========================
 async function loadStations(type, query, sort = 'clickcount') {
     stationsContainer.innerHTML = `<p class="loading-text">${t('loading')}</p>`;
     currentFilterType = type;
     currentFilterQuery = query;
     currentSort = sort;
 
+    const cacheKey = `radio_cache_${type}_${query}_${sort}`;
+    const cachedData = sessionStorage.getItem(cacheKey);
+
+    if (cachedData) {
+        console.log("Заредено от sessionStorage кеша:", cacheKey);
+        allStations = JSON.parse(cachedData);
+        displayStations(allStations);
+        return;
+    }
+
     let url = `${API_BASE}/topclick/60`;
     
     if (type === 'genre' && query !== 'all') {
-        url = `${API_BASE}/bytag/${query}?limit=60&order=${sort}&reverse=true`;
+        url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=60&order=${sort}&reverse=true`;
     } else if (type === 'country') {
-        url = `${API_BASE}/bycountry/${query}?limit=60&order=${sort}&reverse=true`;
+        url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=60&order=${sort}&reverse=true`;
     } else {
         url = `${API_BASE}/topclick/60?order=${sort}&reverse=true`;
     }
@@ -237,6 +250,9 @@ async function loadStations(type, query, sort = 'clickcount') {
         allStations = [...filteredCustom, ...apiStations];
         
         sortStationsLocally(sort);
+
+        // Запазване в кеша за текущата сесия
+        sessionStorage.setItem(cacheKey, JSON.stringify(allStations));
 
         displayStations(allStations);
     } catch (error) {
@@ -271,25 +287,32 @@ async function loadCustomStations() {
 }
 function getCustomStations() { return customStationsCache || []; }
 
-// ======================== ТЪРСЕНЕ ========================
+// ======================== ТЪРСЕНЕ (С ЛИМИТ ЗА СИГУРНОСТ) ========================
 let searchTimeout;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
-    const term = e.target.value.trim().toLowerCase();
-    if (term.length === 0) { displayStations(allStations); return; }
+    let term = e.target.value.trim();
+    
+    if (term.length > 50) {
+        term = term.substring(0, 50);
+        searchInput.value = term;
+    }
+
+    const lowerTerm = term.toLowerCase();
+    if (lowerTerm.length === 0) { displayStations(allStations); return; }
 
     searchTimeout = setTimeout(async () => {
         try {
             const customMatches = getCustomStations().filter(s =>
-                (s.name || '').toLowerCase().includes(term) || (s.tags || '').toLowerCase().includes(term)
+                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
             );
             const localMatches = allStations.filter(s =>
-                (s.name || '').toLowerCase().includes(term) || (s.tags || '').toLowerCase().includes(term)
+                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
             );
 
             let apiResults = [];
-            if (term.length >= 2) {
-                const res = await fetch(`${API_BASE}/byname/${encodeURIComponent(term)}?limit=60`);
+            if (lowerTerm.length >= 2) {
+                const res = await fetch(`${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`);
                 if (res.ok) apiResults = await res.json();
             }
 
@@ -302,7 +325,7 @@ searchInput.addEventListener('input', (e) => {
         } catch (err) {
             console.error('Search error:', err);
             const filtered = allStations.filter(s =>
-                (s.name || '').toLowerCase().includes(term) || (s.tags || '').toLowerCase().includes(term)
+                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
             );
             displayStations(filtered);
         }
@@ -424,7 +447,6 @@ async function playStation(station) {
     currentStation = station;
     audioStream.src = station.url_resolved;
 
-    // Защита при грешка в стрийма
     audioStream.onerror = () => {
         console.warn("Грешка при зареждане на стрийма за станция:", station.name);
         if (songInfoContainer) {
