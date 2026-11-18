@@ -418,16 +418,32 @@ function displayStations(stations) {
     });
 }
 
-// ======================== ПУСКАНЕ НА СТАНЦИЯ ========================
+// ======================== ПУСКАНЕ НА СТАНЦИЯ (С ЗАЩИТА СРЕЩУ ГРЕШКИ) ========================
 async function playStation(station) {
     if (!station.url_resolved) return;
     currentStation = station;
     audioStream.src = station.url_resolved;
 
+    // Защита при грешка в стрийма
+    audioStream.onerror = () => {
+        console.warn("Грешка при зареждане на стрийма за станция:", station.name);
+        if (songInfoContainer) {
+            songInfoContainer.style.display = 'flex';
+            songInfoText.textContent = "⚠️ Стриймът е недостъпен или счупен. Опитайте друга станция.";
+        }
+        stationName.textContent = cleanString(station.name) + " (Офлайн)";
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        if (playPauseBtn) {
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+        }
+    };
+
     try {
         await audioStream.play();
     } catch (e) {
         console.log("Audio play blocked:", e);
+        songInfoContainer.style.display = 'flex';
+        songInfoText.textContent = "⚠️ Браузърът блокира авто-пускането. Натиснете Play.";
         return;
     }
 
@@ -441,7 +457,7 @@ async function playStation(station) {
     checkCurrentSong(station);
 
     if (!audioContext) initAudioGraph();
-    if (audioContext.state === 'suspended') await audioContext.resume();
+    if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
 }
 
 // ======================== ПРОВЕРКА НА ТЕКУЩА ПЕСЕН ========================
@@ -602,7 +618,6 @@ allCategoryButtons.forEach(btn => {
 });
 
 // ======================== БУТОНИ В HERO ========================
-// 1. Бутон "Слушай сега" (пуска случайна от заредените)
 playRandomBtn.addEventListener('click', () => {
     if (allStations.length > 0) {
         const randomIndex = Math.floor(Math.random() * allStations.length);
@@ -610,7 +625,6 @@ playRandomBtn.addEventListener('click', () => {
     }
 });
 
-// 2. Бутон "Произволно радио" (тегли от цялата база данни)
 playRandomGlobalBtn.addEventListener('click', async () => {
     const originalHtml = playRandomGlobalBtn.innerHTML;
     playRandomGlobalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Търсене...';
@@ -631,7 +645,7 @@ playRandomGlobalBtn.addEventListener('click', async () => {
     }
 });
 
-// ======================== ЛОГИКА ЗА НОВИЯ ПЛЕЪР ========================
+// ======================== ЛОГИКА ЗА ПЛЕЪРА ========================
 const playPauseBtn = document.getElementById('play-pause-btn');
 const seekSlider = document.getElementById('seek-slider');
 const currentTimeEl = document.getElementById('current-time');
