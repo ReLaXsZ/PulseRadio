@@ -1,4 +1,5 @@
-const API_BASE = 'https://de1.api.radio-browser.info/json/stations';
+import { API_BASE, loadCustomStations, fetchStations } from './api.js';
+import { initAudioGraph, audioContext } from './audio.js';
 
 const stationsContainer = document.getElementById('stations-container');
 const audioStream = document.getElementById('audio-stream');
@@ -23,17 +24,11 @@ const refreshSongBtn = document.getElementById('refresh-song-btn');
 
 let allStations = [];
 let currentStation = null;
-let audioContext = null;
-let analyser = null;
-let sourceNode = null;
-let eqFilters = [];
-let visualizerRAF = null;
-let customStationsCache = null;
 let currentSort = 'clickcount';
 let currentFilterType = 'genre';
 let currentFilterQuery = 'all';
 
-// ======================== ПЕРСОНАЛИЗИРАНО МЕНЮ ЗА ЕЗИЦИ ========================
+// ======================== ЕЗИЦИ ========================
 const langBtn = document.getElementById('lang-btn');
 const langDropdown = document.getElementById('lang-dropdown');
 const langOptions = document.querySelectorAll('.lang-option');
@@ -60,7 +55,6 @@ langOptions.forEach(opt => {
     });
 });
 
-// ======================== ПРЕВОДИ ========================
 const translations = {
     bg: { genres: "Музикални жанрове", countries: "Държави", all: "Всички", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classical", lofi: "Lofi / Chill", news: "News", loading: "Зареждане на станциите...", noStations: "Няма намерени станции.", failed: "Грешка при зареждане.", footer: "🔒 Без бисквитки, без регистрация, без следене. Чисто музикално изживяване.", selectStation: "Изберете станция", genreCountry: "Жанр и Държава", stationsTitle: "Станции", favorites: "Любими", share: "Сподели", searchPlaceholder: "Търси станция...", searchCountryPlaceholder: "Търси държава...", linkCopied: "Линкът е копиран!", noFavorites: "Няма любими станции.", bass: "Bass", mid: "Mid", treble: "Treble", songLoading: "Проверка...", songError: "Няма информация за песента.", heroText: "Слушай любимите си радиостанции от цял свят. Без регистрация, без реклами.", playNow: "Слушай сега", quickPicks: "Бърз избор", sortClicks: "Най-пускани", sortName: "Азбучен ред", sortVotes: "Гласове", randomStation: "Произволно радио" },
     en: { genres: "Music Genres", countries: "Countries", all: "All Stations", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classical", lofi: "Lofi / Chill", news: "News", loading: "Loading stations...", noStations: "No stations found.", failed: "Failed to load.", footer: "🔒 No cookies, no registration, no tracking. Pure music experience.", selectStation: "Select a station", genreCountry: "Genre & Country", stationsTitle: "Stations", favorites: "Favorites", share: "Share", searchPlaceholder: "Search station...", searchCountryPlaceholder: "Search country...", linkCopied: "Link copied!", noFavorites: "No favorite stations.", bass: "Bass", mid: "Mid", treble: "Treble", songLoading: "Checking...", songError: "No song info available.", heroText: "Listen to your favorite radio stations from around the world. No registration, no ads.", playNow: "Listen Now", quickPicks: "Quick Picks", sortClicks: "Most Played", sortName: "Alphabetical", sortVotes: "Votes", randomStation: "Random Radio" },
@@ -78,27 +72,22 @@ function t(key) { return translations[languageSelect.value][key] || key; }
 
 function updateLanguage() {
     const lang = languageSelect.value;
-    
     document.querySelectorAll('[data-i18n]').forEach(el => {
         const key = el.getAttribute('data-i18n');
         if (translations[lang] && translations[lang][key]) el.textContent = translations[lang][key];
     });
-    
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         const key = el.getAttribute('data-i18n-placeholder');
         if (translations[lang] && translations[lang][key]) el.placeholder = translations[lang][key];
     });
-    
     renderFavorites();
 }
 
-// ======================== ПОМОЩНИ ФУНКЦИИ И СИГУРНОСТ (XSS SANITIZATION) ========================
 function cleanString(str) {
     if (!str) return '';
     let text = str.toString().trim();
     text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
     text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
-    
     const div = document.createElement('div');
     div.textContent = text;
     return div.innerHTML || 'Unknown Station';
@@ -140,22 +129,16 @@ function renderFavorites() {
     });
 }
 
-// ======================== ЗАРЕЖДАНЕ НА ТОП СТАНЦИИ (QUICK PICKS) ========================
 async function loadTopStations(type = 'global', query = '') {
     quickPicksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Зареждане...</p>';
-    
     let url = `${API_BASE}/topclick/8`;
-    
     if (type === 'country' && query) {
         url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
     } else if (type === 'genre' && query !== 'all') {
         url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
     }
-
     try {
-        const res = await fetch(url);
-        if (!res.ok) throw new Error('Network error');
-        const topStations = await res.json();
+        const topStations = await fetchStations(url);
         renderQuickPicks(topStations);
     } catch (e) {
         console.warn('Could not load top stations:', e);
@@ -166,27 +149,21 @@ async function loadTopStations(type = 'global', query = '') {
 function renderQuickPicks(stations) {
     quickPicksContainer.innerHTML = '';
     if (!stations || stations.length === 0) return;
-
     stations.forEach(station => {
         const div = document.createElement('div');
         div.className = 'quick-pick-item';
-        
         const img = document.createElement('img');
         img.src = station.favicon || 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
         img.onerror = () => { img.src = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png'; };
-        
         const span = document.createElement('span');
         span.textContent = cleanString(station.name);
-
         div.appendChild(img);
         div.appendChild(span);
-
         div.addEventListener('click', () => playStation(station));
         quickPicksContainer.appendChild(div);
     });
 }
 
-// ======================== ТЕМА ========================
 const savedTheme = localStorage.getItem('radio_theme') || 'dark';
 if (savedTheme === 'light') document.body.classList.add('light-theme');
 updateThemeIcon();
@@ -202,7 +179,6 @@ function updateThemeIcon() {
     icon.className = document.body.classList.contains('light-theme') ? 'fa-solid fa-sun' : 'fa-solid fa-moon';
 }
 
-// ======================== API ЗАРЕЖДАНЕ (С КЕШИРАНЕ В SESSIONSTORAGE И СОРТИРАНЕ) ========================
 async function loadStations(type, query, sort = 'clickcount') {
     stationsContainer.innerHTML = `<p class="loading-text">${t('loading')}</p>`;
     currentFilterType = type;
@@ -213,14 +189,12 @@ async function loadStations(type, query, sort = 'clickcount') {
     const cachedData = sessionStorage.getItem(cacheKey);
 
     if (cachedData) {
-        console.log("Заредено от sessionStorage кеша:", cacheKey);
         allStations = JSON.parse(cachedData);
         displayStations(allStations);
         return;
     }
 
     let url = `${API_BASE}/topclick/60`;
-    
     if (type === 'genre' && query !== 'all') {
         url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=60&order=${sort}&reverse=true`;
     } else if (type === 'country') {
@@ -230,16 +204,12 @@ async function loadStations(type, query, sort = 'clickcount') {
     }
 
     try {
-        const response = await fetch(url);
-        if (!response.ok) throw new Error('Network error');
-        let apiStations = await response.json();
-        
+        let apiStations = await fetchStations(url);
         if (!Array.isArray(apiStations) || apiStations.length === 0) {
-            const fallback = await fetch(`${API_BASE}/topclick/60`);
-            apiStations = await fallback.json();
+            apiStations = await fetchStations(`${API_BASE}/topclick/60`);
         }
 
-        const custom = getCustomStations();
+        const custom = await loadCustomStations();
         let filteredCustom = custom;
         if (type === 'genre' && query !== 'all') {
             filteredCustom = custom.filter(s => (s.tags || '').toLowerCase().includes(query.toLowerCase()));
@@ -248,12 +218,8 @@ async function loadStations(type, query, sort = 'clickcount') {
         }
 
         allStations = [...filteredCustom, ...apiStations];
-        
         sortStationsLocally(sort);
-
-        // Запазване в кеша за текущата сесия
         sessionStorage.setItem(cacheKey, JSON.stringify(allStations));
-
         displayStations(allStations);
     } catch (error) {
         stationsContainer.innerHTML = `<p style="color: #ef4444;">${t('failed')}</p>`;
@@ -271,28 +237,10 @@ function sortStationsLocally(sortType) {
     }
 }
 
-// ======================== РЪЧНО ДОБАВЕНИ СТАНЦИИ ========================
-async function loadCustomStations() {
-    if (customStationsCache) return customStationsCache;
-    try {
-        const res = await fetch('custom_stations.json');
-        if (!res.ok) throw new Error('No custom file');
-        customStationsCache = await res.json();
-        return customStationsCache;
-    } catch (e) {
-        console.warn('Could not load custom_stations.json:', e);
-        customStationsCache = [];
-        return [];
-    }
-}
-function getCustomStations() { return customStationsCache || []; }
-
-// ======================== ТЪРСЕНЕ (С ЛИМИТ ЗА СИГУРНОСТ) ========================
 let searchTimeout;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
     let term = e.target.value.trim();
-    
     if (term.length > 50) {
         term = term.substring(0, 50);
         searchInput.value = term;
@@ -303,7 +251,8 @@ searchInput.addEventListener('input', (e) => {
 
     searchTimeout = setTimeout(async () => {
         try {
-            const customMatches = getCustomStations().filter(s =>
+            const custom = await loadCustomStations();
+            const customMatches = custom.filter(s =>
                 (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
             );
             const localMatches = allStations.filter(s =>
@@ -312,8 +261,7 @@ searchInput.addEventListener('input', (e) => {
 
             let apiResults = [];
             if (lowerTerm.length >= 2) {
-                const res = await fetch(`${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`);
-                if (res.ok) apiResults = await res.json();
+                apiResults = await fetchStations(`${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`);
             }
 
             const uniqueStations = new Map();
@@ -332,7 +280,6 @@ searchInput.addEventListener('input', (e) => {
     }, 400);
 });
 
-// Търсене на държави
 const countrySearchInput = document.getElementById('country-search-input');
 if (countrySearchInput) {
     countrySearchInput.addEventListener('input', (e) => {
@@ -343,7 +290,6 @@ if (countrySearchInput) {
     });
 }
 
-// ======================== СОРТИРАНЕ ========================
 sortButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         sortButtons.forEach(b => b.classList.remove('active'));
@@ -353,7 +299,6 @@ sortButtons.forEach(btn => {
     });
 });
 
-// ======================== РЕНДЕРИРАНЕ НА СТАНЦИИ ========================
 function displayStations(stations) {
     stationsContainer.innerHTML = '';
     const defaultIcon = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
@@ -441,7 +386,6 @@ function displayStations(stations) {
     });
 }
 
-// ======================== ПУСКАНЕ НА СТАНЦИЯ (С ЗАЩИТА СРЕЩУ ГРЕШКИ) ========================
 async function playStation(station) {
     if (!station.url_resolved) return;
     currentStation = station;
@@ -478,136 +422,35 @@ async function playStation(station) {
     songInfoContainer.style.display = 'flex';
     checkCurrentSong(station);
 
-    if (!audioContext) initAudioGraph();
+    if (!audioContext) initAudioGraph(audioStream, visualizerCanvas);
     if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
 }
 
-// ======================== ПРОВЕРКА НА ТЕКУЩА ПЕСЕН ========================
 refreshSongBtn.addEventListener('click', () => {
     if (currentStation) checkCurrentSong(currentStation);
 });
 
 async function checkCurrentSong(station) {
     songInfoText.textContent = t('songLoading');
-    
     try {
         const urlObj = new URL(station.url_resolved);
         const statusUrl = `${urlObj.protocol}//${urlObj.host}/status-json.xsl`;
-        
         const response = await fetch(statusUrl);
         if (!response.ok) throw new Error('No status');
-        
         const data = await response.json();
         let title = '';
-        
         if (data.icestats && data.icestats.source) {
             const sources = Array.isArray(data.icestats.source) ? data.icestats.source : [data.icestats.source];
             const currentSource = sources.find(s => s.listenurl && s.listenurl.includes(urlObj.pathname)) || sources[0];
             title = currentSource.title || currentSource.artist_t || currentSource.song || '';
         }
-        
-        if (title) {
-            songInfoText.textContent = title;
-        } else {
-            songInfoText.textContent = t('songError');
-        }
+        songInfoText.textContent = title ? title : t('songError');
     } catch (e) {
         console.log('Song info error:', e);
         songInfoText.textContent = t('songError');
     }
 }
 
-// ======================== WEB AUDIO: ВИЗУАЛИЗАТОР + ЕКВАЛАЙЗЕР ========================
-function initAudioGraph() {
-    try {
-        audioContext = new (window.AudioContext || window.webkitAudioContext)();
-        sourceNode = audioContext.createMediaElementSource(audioStream);
-
-        const bass = audioContext.createBiquadFilter();
-        bass.type = 'lowshelf'; bass.frequency.value = 200;
-        const mid = audioContext.createBiquadFilter();
-        mid.type = 'peaking'; mid.frequency.value = 1000; mid.Q.value = 1;
-        const treble = audioContext.createBiquadFilter();
-        treble.type = 'highshelf'; treble.frequency.value = 3000;
-
-        const savedEq = JSON.parse(localStorage.getItem('radio_eq') || '{"bass":0,"mid":0,"treble":0}');
-        bass.gain.value = savedEq.bass; mid.gain.value = savedEq.mid; treble.gain.value = savedEq.treble;
-        document.getElementById('eq-bass').value = savedEq.bass;
-        document.getElementById('eq-mid').value = savedEq.mid;
-        document.getElementById('eq-treble').value = savedEq.treble;
-
-        eqFilters = [bass, mid, treble];
-
-        analyser = audioContext.createAnalyser();
-        analyser.fftSize = 128;
-
-        sourceNode.connect(bass);
-        bass.connect(mid);
-        mid.connect(treble);
-        treble.connect(analyser);
-        analyser.connect(audioContext.destination);
-
-        document.getElementById('eq-bass').addEventListener('input', (e) => { bass.gain.value = e.target.value; saveEq(); });
-        document.getElementById('eq-mid').addEventListener('input', (e) => { mid.gain.value = e.target.value; saveEq(); });
-        document.getElementById('eq-treble').addEventListener('input', (e) => { treble.gain.value = e.target.value; saveEq(); });
-
-        startVisualizer();
-    } catch (e) {
-        console.error('Web Audio error:', e);
-    }
-}
-
-function saveEq() {
-    localStorage.setItem('radio_eq', JSON.stringify({
-        bass: +document.getElementById('eq-bass').value,
-        mid: +document.getElementById('eq-mid').value,
-        treble: +document.getElementById('eq-treble').value
-    }));
-}
-
-function startVisualizer() {
-    const ctx = visualizerCanvas.getContext('2d');
-    const bufferLength = analyser.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-
-    function draw() {
-        visualizerRAF = requestAnimationFrame(draw);
-        analyser.getByteFrequencyData(dataArray);
-
-        const w = visualizerCanvas.width;
-        const h = visualizerCanvas.height;
-        ctx.clearRect(0, 0, w, h);
-
-        const accent = getComputedStyle(document.body).getPropertyValue('--accent').trim() || '#38bdf8';
-        ctx.fillStyle = accent;
-
-        const barWidth = 6; 
-        const gap = 4;      
-        const totalBars = Math.floor(w / (barWidth + gap)); 
-        
-        const startFreq = Math.floor(bufferLength * 0.1); 
-        const endFreq = Math.floor(bufferLength * 0.8);
-        const step = (endFreq - startFreq) / totalBars;
-
-        let x = 0;
-        for (let i = 0; i < totalBars; i++) {
-            const index = Math.floor(startFreq + i * step);
-            const value = dataArray[index] || 0;
-            
-            let barHeight = (value / 255) * h;
-            if (barHeight < 4) barHeight = 4;
-
-            ctx.beginPath();
-            ctx.roundRect(x, h - barHeight, barWidth, barHeight, [3, 3, 0, 0]);
-            ctx.fill();
-
-            x += barWidth + gap;
-        }
-    }
-    draw();
-}
-
-// ======================== СПОДЕЛЯНЕ ========================
 shareBtn.addEventListener('click', () => {
     if (!currentStation) return;
     const url = new URL(window.location);
@@ -619,14 +462,12 @@ shareBtn.addEventListener('click', () => {
     });
 });
 
-// ======================== КАТЕГОРИИ ========================
 allCategoryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         allCategoryButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
         const genre = btn.getAttribute('data-genre');
         const country = btn.getAttribute('data-country');
-        
         const activeSort = document.querySelector('.sort-btn.active').getAttribute('data-sort');
         
         if (genre) {
@@ -639,7 +480,6 @@ allCategoryButtons.forEach(btn => {
     });
 });
 
-// ======================== БУТОНИ В HERO ========================
 playRandomBtn.addEventListener('click', () => {
     if (allStations.length > 0) {
         const randomIndex = Math.floor(Math.random() * allStations.length);
@@ -650,14 +490,14 @@ playRandomBtn.addEventListener('click', () => {
 playRandomGlobalBtn.addEventListener('click', async () => {
     const originalHtml = playRandomGlobalBtn.innerHTML;
     playRandomGlobalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Търсене...';
-    
     try {
-        const res = await fetch(`${API_BASE}?order=random&limit=1`);
-        if (!res.ok) throw new Error('Network error');
-        
-        const randomStations = await res.json();
-        if (randomStations && randomStations.length > 0) {
-            playStation(randomStations[0]);
+        const stations = await fetchStations(`${API_BASE}/topclick/100`);
+        const validStations = stations.filter(s => s.url_resolved && s.url_resolved.trim() !== '');
+        if (validStations.length > 0) {
+            const randomIndex = Math.floor(Math.random() * validStations.length);
+            playStation(validStations[randomIndex]);
+        } else {
+            alert('Няма намерени активни станции.');
         }
     } catch (e) {
         console.error('Random station error:', e);
@@ -667,7 +507,6 @@ playRandomGlobalBtn.addEventListener('click', async () => {
     }
 });
 
-// ======================== ЛОГИКА ЗА ПЛЕЪРА ========================
 const playPauseBtn = document.getElementById('play-pause-btn');
 const seekSlider = document.getElementById('seek-slider');
 const currentTimeEl = document.getElementById('current-time');
@@ -735,7 +574,6 @@ volumeIcon.addEventListener('click', () => {
     }
 });
 
-// ======================== СТАРТИРАНЕ ========================
 document.addEventListener('DOMContentLoaded', async () => {
     updateLanguage();
     renderFavorites();
@@ -746,12 +584,12 @@ document.addEventListener('DOMContentLoaded', async () => {
     const stationUuid = params.get('station');
 
     if (stationUuid) {
-        const customMatch = getCustomStations().find(s => s.stationuuid === stationUuid);
+        const custom = await loadCustomStations();
+        const customMatch = custom.find(s => s.stationuuid === stationUuid);
         if (customMatch) { playStation(customMatch); return; }
 
         try {
-            const res = await fetch(`${API_BASE}/byuuid/${stationUuid}`);
-            const data = await res.json();
+            const data = await fetchStations(`${API_BASE}/byuuid/${stationUuid}`);
             if (Array.isArray(data) && data.length > 0) {
                 playStation(data[0]);
                 return;
