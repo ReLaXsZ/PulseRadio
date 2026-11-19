@@ -22,8 +22,8 @@
         </div>
         <div class="header-controls">
             <div class="custom-lang-select" id="lang-select-container">
-                <button class="lang-btn" id="lang-btn">
-                    <span class="fi fi-bg"></span> Български <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
+                <button type="button" class="lang-btn" id="lang-btn">
+                    <span class="fi fi-bg"></span> <span id="lang-btn-label">Български</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
                 </button>
                 <div class="lang-dropdown" id="lang-dropdown">
                     <div class="lang-option" data-value="bg"><span class="fi fi-bg"></span> Български</div>
@@ -51,10 +51,10 @@
                 <option value="ja">ja</option>
             </select>
 
-            <button id="theme-toggle" class="icon-btn" title="Смени тема">
+            <button type="button" id="theme-toggle" class="icon-btn" title="Смени тема" data-i18n-title="themeToggleTitle">
                 <i class="fa-solid fa-moon"></i>
             </button>
-            <span class="privacy-badge"><i class="fa-solid fa-shield-halved"></i> 100% Anonymous</span>
+            <span class="privacy-badge"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="privacyBadge">100% Anonymous</span></span>
         </div>
     </header>
 
@@ -69,13 +69,13 @@
             <div class="filter-group">
                 <h3 data-i18n="genres">Музикални жанрове</h3>
                 <div class="categories-list" id="genre-buttons">
-                    <button class="cat-btn active" data-genre="all"><i class="fa-solid fa-globe" style="color: #38bdf8;"></i> <span data-i18n="all">Всички</span></button>
-                    <button class="cat-btn" data-genre="pop"><i class="fa-solid fa-music" style="color: #f472b6;"></i> <span data-i18n="pop">Pop</span></button>
-                    <button class="cat-btn" data-genre="rock"><i class="fa-solid fa-guitar" style="color: #ef4444;"></i> <span data-i18n="rock">Rock</span></button>
-                    <button class="cat-btn" data-genre="jazz"><i class="fa-solid fa-saxophone" style="color: #fbbf24;"></i> <span data-i18n="jazz">Jazz</span></button>
-                    <button class="cat-btn" data-genre="classical"><i class="fa-solid fa-violin" style="color: #a78bfa;"></i> <span data-i18n="classical">Classical</span></button>
-                    <button class="cat-btn" data-genre="lofi"><i class="fa-solid fa-headphones" style="color: #34d399;"></i> <span data-i18n="lofi">Lofi / Chill</span></button>
-                    <button class="cat-btn" data-genre="news"><i class="fa-solid fa-newspaper" style="color: #60a5fa;"></i> <span data-i18n="news">News</span></button>
+                    <button type="button" class="cat-btn active" data-genre="all"><i class="fa-solid fa-globe" style="color: #38bdf8;"></i> <span data-i18n="all">Всички</span></button>
+                    <button type="button" class="cat-btn" data-genre="pop"><i class="fa-solid fa-music" style="color: #f472b6;"></i> <span data-i18n="pop">Pop</span></button>
+                    <button type="button" class="cat-btn" data-genre="rock"><i class="fa-solid fa-guitar" style="color: #ef4444;"></i> <span data-i18n="rock">Rock</span></button>
+                    <button type="button" class="cat-btn" data-genre="jazz"><i class="fa-solid fa-compact-disc" style="color: #fbbf24;"></i> <span data-i18n="jazz">Jazz</span></button>
+                    <button type="button" class="cat-btn" data-genre="classical"><i class="fa-solid fa-feather-pointed" style="color: #a78bfa;"></i> <span data-i18n="classical">Classical</span></button>
+                    <button type="button" class="cat-btn" data-genre="lofi"><i class="fa-solid fa-headphones" style="color: #34d399;"></i> <span data-i18n="lofi">Lofi / Chill</span></button>
+                    <button type="button" class="cat-btn" data-genre="news"><i class="fa-solid fa-newspaper" style="color: #60a5fa;"></i> <span data-i18n="news">News</span></button>
                 </div>
             </div>
 
@@ -86,23 +86,36 @@
                     <input type="text" id="country-search-input" placeholder="Търси държава..." data-i18n-placeholder="searchCountryPlaceholder">
                 </div>
                 <div class="countries-grid" id="country-buttons">
-                    <button class="cat-btn" data-country="Bulgaria"><span class="fi fi-bg"></span> Bulgaria</button>
-                    <button class="cat-btn" data-country="United States"><span class="fi fi-us"></span> USA</button>
-                    <button class="cat-btn" data-country="United Kingdom"><span class="fi fi-gb"></span> UK</button>
-                    <button class="cat-btn" data-country="Germany"><span class="fi fi-de"></span> Germany</button>
-                    <button class="cat-btn" data-country="France"><span class="fi fi-fr"></span> France</button>
-                    <button class="cat-btn" data-country="Japan"><span class="fi fi-jp"></span> Japan</button>
-                    <button class="cat-btn" data-country="Spain"><span class="fi fi-es"></span> Spain</button>
-                    <button class="cat-btn" data-country="Italy"><span class="fi fi-it"></span> Italy</button>
-                    <button class="cat-btn" data-country="Netherlands"><span class="fi fi-nl"></span> Netherlands</button>
-                    <button class="cat-btn" data-country="Russia"><span class="fi fi-ru"></span> Russia</button>
-                    <button class="cat-btn" data-country="Romania"><span class="fi fi-ro"></span> Romania</button>
-                    <button class="cat-btn" data-country="Greece"><span class="fi fi-gr"></span> Greece</button>
-                    <button class="cat-btn" data-country="Turkey"><span class="fi fi-tr"></span> Turkey</button>
-                    <button class="cat-btn" data-country="Brazil"><span class="fi fi-br"></span> Brazil</button>
-                    <button class="cat-btn" data-country="Canada"><span class="fi fi-ca"></span> Canada</button>
-                    <button class="cat-btn" data-country="Australia"><span class="fi fi-au"></span> Australia</button>
+                    <button type="button" class="cat-btn" data-country="Bulgaria"><span class="fi fi-bg"></span> Bulgaria</button>
+                    <button type="button" class="cat-btn" data-country="United States"><span class="fi fi-us"></span> USA</button>
+                    <button type="button" class="cat-btn" data-country="United Kingdom"><span class="fi fi-gb"></span> UK</button>
+                    <button type="button" class="cat-btn" data-country="Germany"><span class="fi fi-de"></span> Germany</button>
+                    <button type="button" class="cat-btn" data-country="France"><span class="fi fi-fr"></span> France</button>
+                    <button type="button" class="cat-btn" data-country="Italy"><span class="fi fi-it"></span> Italy</button>
+                    <button type="button" class="cat-btn" data-country="Spain"><span class="fi fi-es"></span> Spain</button>
+                    <button type="button" class="cat-btn" data-country="Portugal"><span class="fi fi-pt"></span> Portugal</button>
+                    <button type="button" class="cat-btn" data-country="Netherlands"><span class="fi fi-nl"></span> Netherlands</button>
+                    <button type="button" class="cat-btn" data-country="Belgium"><span class="fi fi-be"></span> Belgium</button>
+                    <button type="button" class="cat-btn" data-country="Austria"><span class="fi fi-at"></span> Austria</button>
+                    <button type="button" class="cat-btn" data-country="Switzerland"><span class="fi fi-ch"></span> Switzerland</button>
+                    <button type="button" class="cat-btn" data-country="Sweden"><span class="fi fi-se"></span> Sweden</button>
+                    <button type="button" class="cat-btn" data-country="Norway"><span class="fi fi-no"></span> Norway</button>
+                    <button type="button" class="cat-btn" data-country="Denmark"><span class="fi fi-dk"></span> Denmark</button>
+                    <button type="button" class="cat-btn" data-country="Finland"><span class="fi fi-fi"></span> Finland</button>
+                    <button type="button" class="cat-btn" data-country="Poland"><span class="fi fi-pl"></span> Poland</button>
+                    <button type="button" class="cat-btn" data-country="Romania"><span class="fi fi-ro"></span> Romania</button>
+                    <button type="button" class="cat-btn" data-country="Greece"><span class="fi fi-gr"></span> Greece</button>
+                    <button type="button" class="cat-btn" data-country="Turkey"><span class="fi fi-tr"></span> Turkey</button>
+                    <button type="button" class="cat-btn" data-country="Serbia"><span class="fi fi-rs"></span> Serbia</button>
+                    <button type="button" class="cat-btn" data-country="Canada"><span class="fi fi-ca"></span> Canada</button>
+                    <button type="button" class="cat-btn" data-country="Brazil"><span class="fi fi-br"></span> Brazil</button>
+                    <button type="button" class="cat-btn" data-country="Mexico"><span class="fi fi-mx"></span> Mexico</button>
+                    <button type="button" class="cat-btn" data-country="Japan"><span class="fi fi-jp"></span> Japan</button>
+                    <button type="button" class="cat-btn" data-country="Australia"><span class="fi fi-au"></span> Australia</button>
                 </div>
+                <button type="button" id="toggle-more-countries-btn" class="more-countries-btn">
+                    <i class="fa-solid fa-chevron-down"></i> <span data-i18n="moreCountries">Още държави</span>
+                </button>
             </div>
 
             <div class="filter-group">
@@ -118,13 +131,13 @@
                     <div class="hero-content">
                         <h1>GlobalPulse Radio</h1>
                         <div class="hero-buttons">
-                            <button id="play-random-btn" class="hero-btn"><i class="fa-solid fa-play"></i> <span data-i18n="playNow">Слушай сега</span></button>
-                            <button id="play-random-global-btn" class="hero-btn-secondary"><i class="fa-solid fa-shuffle"></i> <span data-i18n="randomStation">Произволно радио</span></button>
+                            <button type="button" id="play-random-btn" class="hero-btn"><i class="fa-solid fa-play"></i> <span data-i18n="playNow">Слушай сега</span></button>
+                            <button type="button" id="play-random-global-btn" class="hero-btn-secondary"><i class="fa-solid fa-shuffle"></i> <span data-i18n="randomStation">Произволно радио</span></button>
                         </div>
                     </div>
                 </div>
 
-                <!-- ФИКСИРАН ДОЛЕН ПЛЕЙЪР -->
+                <!-- ФИКСИРАН СТЪКЛЕН ДОЛЕН ПЛЕЙЪР С ВИЗУАЛИЗАТОР -->
                 <div class="player-card">
                     <div class="now-playing-info">
                         <img id="station-icon" src="https://cdn-icons-png.flaticon.com/512/2950/2950683.png" alt="Logo">
@@ -133,8 +146,8 @@
                             <p id="station-details" data-i18n="genreCountry">Жанр и Държава</p>
                             <div class="now-playing-song" id="song-info-container" style="display: none;">
                                 <i class="fa-solid fa-music"></i>
-                                <span id="song-info-text">Проверка на песента...</span>
-                                <button id="refresh-song-btn" class="mini-refresh-btn" title="Обнови"><i class="fa-solid fa-rotate-right"></i></button>
+                                <span id="song-info-text" data-i18n="songLoading">Проверка...</span>
+                                <button type="button" id="refresh-song-btn" class="mini-refresh-btn" title="Обнови" data-i18n-title="refreshTitle"><i class="fa-solid fa-rotate-right"></i></button>
                             </div>
                         </div>
                     </div>
@@ -145,25 +158,30 @@
                         <label data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0">
                         
                         <div class="sleep-timer-dropdown-container">
-                            <button id="sleep-timer-btn" class="icon-btn" title="Сън таймер"><i class="fa-regular fa-clock"></i></button>
+                            <button type="button" id="sleep-timer-btn" class="icon-btn" title="Сън таймер" data-i18n-title="sleepTimerTitle"><i class="fa-regular fa-clock"></i></button>
                             <div class="sleep-timer-menu" id="sleep-timer-menu">
-                                <span style="font-size: 0.75rem; color: var(--text-muted);">Сън таймер:</span>
-                                <button class="timer-opt" data-mins="0">Изключен</button>
-                                <button class="timer-opt" data-mins="15">15 мин</button>
-                                <button class="timer-opt" data-mins="30">30 мин</button>
-                                <button class="timer-opt" data-mins="45">45 мин</button>
-                                <button class="timer-opt" data-mins="60">60 мин</button>
+                                <span style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="sleepTimerLabel">Сън таймер:</span>
+                                <button type="button" class="timer-opt" data-mins="0" data-i18n="timerOff">Изключен</button>
+                                <button type="button" class="timer-opt" data-mins="15">15 <span data-i18n="minsShort">мин</span></button>
+                                <button type="button" class="timer-opt" data-mins="30">30 <span data-i18n="minsShort">мин</span></button>
+                                <button type="button" class="timer-opt" data-mins="45">45 <span data-i18n="minsShort">мин</span></button>
+                                <button type="button" class="timer-opt" data-mins="60">60 <span data-i18n="minsShort">мин</span></button>
                                 <div id="timer-countdown" style="font-size:0.7rem; color:var(--accent); display:none;"></div>
                             </div>
                         </div>
-                        <button id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор"><i class="fa-solid fa-expand"></i></button>
+                        <button type="button" id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор" data-i18n-title="fullscreenVisTitle"><i class="fa-solid fa-expand"></i></button>
+                    </div>
+
+                    <!-- ЖИВ АУДИО ВИЗУАЛИЗАТОР В ОЧЕРТАНОТО ПОЛЕ -->
+                    <div class="player-visualizer-box" title="Аудио визуализатор" data-i18n-title="visualizerTitle">
+                        <canvas id="visualizer" width="210" height="36"></canvas>
                     </div>
 
                     <div class="custom-player">
                         <audio id="audio-stream" crossorigin="anonymous"></audio>
-                        <button id="prev-station-btn" class="nav-player-btn" title="Предишна станция"><i class="fa-solid fa-backward-step"></i></button>
-                        <button id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
-                        <button id="next-station-btn" class="nav-player-btn" title="Следваща станция"><i class="fa-solid fa-forward-step"></i></button>
+                        <button type="button" id="prev-station-btn" class="nav-player-btn" title="Предишна станция" data-i18n-title="prevStationTitle"><i class="fa-solid fa-backward-step"></i></button>
+                        <button type="button" id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
+                        <button type="button" id="next-station-btn" class="nav-player-btn" title="Следваща станция" data-i18n-title="nextStationTitle"><i class="fa-solid fa-forward-step"></i></button>
                         
                         <div class="live-status">
                             <span class="live-dot" id="live-dot"></span>
@@ -171,12 +189,12 @@
                         </div>
 
                         <div class="volume-container">
-                            <i class="fa-solid fa-volume-high" id="volume-icon" style="cursor: pointer;" title="Mute / Unmute"></i>
+                            <i class="fa-solid fa-volume-high" id="volume-icon" style="cursor: pointer;" title="Mute / Unmute" data-i18n-title="muteTitle"></i>
                             <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="1">
                         </div>
                     </div>
 
-                    <button id="share-btn" class="share-btn" disabled>
+                    <button type="button" id="share-btn" class="share-btn" disabled>
                         <i class="fa-solid fa-share-nodes"></i> <span data-i18n="share">Сподели</span>
                     </button>
                 </div>
@@ -186,15 +204,15 @@
             <div class="quick-picks-wrapper">
                 <h3 data-i18n="quickPicks">Бърз избор</h3>
                 <div class="quick-picks" id="quick-picks-container">
-                    <p style="color: var(--text-muted); font-size: 0.9rem;">Зареждане на топ станции...</p>
+                    <p style="color: var(--text-muted); font-size: 0.9rem;" data-i18n="loadingTop">Зареждане на топ станции...</p>
                 </div>
             </div>
 
-            <!-- НАСКОРО СЛУШАНИ (НОВ МОДУЛ) -->
+            <!-- НАСКОРО СЛУШАНИ -->
             <div class="recently-played-wrapper" id="recently-played-wrapper" style="display: none;">
                 <div class="section-sub-header">
                     <h3 data-i18n="recentlyPlayed">Наскоро слушани</h3>
-                    <button id="clear-recent-btn" class="clear-btn" data-i18n="clear">Изчисти</button>
+                    <button type="button" id="clear-recent-btn" class="clear-btn" data-i18n="clear">Изчисти</button>
                 </div>
                 <div class="recently-played-row" id="recently-played-container"></div>
             </div>
@@ -205,13 +223,13 @@
                     <h3 id="section-title" data-i18n="stationsTitle">Станции</h3>
                     <div class="controls-right">
                         <div class="sort-controls" id="sort-controls">
-                            <button class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
-                            <button class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
-                            <button class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
+                            <button type="button" class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
+                            <button type="button" class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
+                            <button type="button" class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
                         </div>
                         <div class="view-toggle">
-                            <button class="view-btn active" id="view-grid-btn" title="Мрежа"><i class="fa-solid fa-grip"></i> Grid</button>
-                            <button class="view-btn" id="view-list-btn" title="Списък"><i class="fa-solid fa-list"></i> List</button>
+                            <button type="button" class="view-btn active" id="view-grid-btn" title="Мрежа" data-i18n-title="gridViewTitle"><i class="fa-solid fa-grip"></i> <span data-i18n="gridView">Grid</span></button>
+                            <button type="button" class="view-btn" id="view-list-btn" title="Списък" data-i18n-title="listViewTitle"><i class="fa-solid fa-list"></i> <span data-i18n="listView">List</span></button>
                         </div>
                     </div>
                 </div>
@@ -224,8 +242,8 @@
     </main>
 
     <div id="fullscreen-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11, 15, 25, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
-        <button id="close-fullscreen" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-        <h2 id="fs-station-name" style="color: #fff; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Радио станция</h2>
+        <button type="button" id="close-fullscreen" title="Затвори" data-i18n-title="closeTitle" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
+        <h2 id="fs-station-name" data-i18n="fullscreenStationTitle" style="color: #fff; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Радио станция</h2>
         <canvas id="fullscreen-visualizer" style="width: 80vw; height: 60vh; background: rgba(0,0,0,0.5); border-radius: 12px;"></canvas>
     </div>
 

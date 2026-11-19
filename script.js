@@ -1,14 +1,27 @@
 import { API_BASE, loadCustomStations, fetchStations } from './api.js';
-import { initAudioGraph, audioContext, startFullscreenVisualizer, stopFullscreenVisualizer } from './audio.js';
+import {
+    initAudioGraph,
+    audioContext,
+    startVisualizer,
+    setVisualizerPlayingState,
+    startFullscreenVisualizer,
+    stopFullscreenVisualizer
+} from './audio.js';
+import {
+    detectInitialLanguage,
+    getTranslation,
+    applyTranslationsToDom
+} from './i18n.js';
 
 const stationsContainer = document.getElementById('stations-container');
 const audioStream = document.getElementById('audio-stream');
 const stationName = document.getElementById('station-name');
 const stationDetails = document.getElementById('station-details');
 const stationIcon = document.getElementById('station-icon');
+const visualizerCanvas = document.getElementById('visualizer');
 const searchInput = document.getElementById('search-input');
 const allCategoryButtons = document.querySelectorAll('.cat-btn');
-const languageSelect = document.getElementById('language-select'); 
+const languageSelect = document.getElementById('language-select');
 const themeToggle = document.getElementById('theme-toggle');
 const shareBtn = document.getElementById('share-btn');
 const favoritesList = document.getElementById('favorites-list');
@@ -35,8 +48,35 @@ let currentStation = null;
 let currentSort = 'clickcount';
 let currentFilterType = 'genre';
 let currentFilterQuery = 'all';
+let selectedCountry = null;
+let searchRequestId = 0;
 
 const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
+
+function t(key) {
+    return getTranslation(languageSelect.value, key);
+}
+
+function isSafeStreamUrl(url) {
+    if (!url || typeof url !== 'string') return false;
+    try {
+        const parsed = new URL(url.trim());
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+function renderStatusMessage(container, text, isError = false) {
+    container.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'loading-text';
+    p.textContent = text;
+    if (isError) {
+        p.style.color = '#ef4444';
+    }
+    container.appendChild(p);
+}
 
 // ======================== ЕЗИЦИ ========================
 const langBtn = document.getElementById('lang-btn');
@@ -52,49 +92,44 @@ document.addEventListener('click', () => {
     langDropdown.classList.remove('show');
 });
 
+function setLanguage(langCode) {
+    languageSelect.value = langCode;
+    const matchingOption = Array.from(langOptions).find(
+        (opt) => opt.getAttribute('data-value') === langCode
+    );
+    if (matchingOption) {
+        const flagClass = matchingOption.querySelector('span')?.className || 'fi fi-bg';
+        const labelText = matchingOption.textContent.trim();
+        langBtn.innerHTML = '';
+
+        const flagSpan = document.createElement('span');
+        flagSpan.className = flagClass;
+
+        const textSpan = document.createElement('span');
+        textSpan.id = 'lang-btn-label';
+        textSpan.textContent = labelText;
+
+        const chevron = document.createElement('i');
+        chevron.className = 'fa-solid fa-chevron-down';
+        chevron.style.fontSize = '0.7rem';
+        chevron.style.marginLeft = '5px';
+
+        langBtn.appendChild(flagSpan);
+        langBtn.appendChild(textSpan);
+        langBtn.appendChild(chevron);
+    }
+
+    applyTranslationsToDom(langCode);
+    updateCountriesVisibility();
+    renderFavorites();
+}
+
 langOptions.forEach(opt => {
     opt.addEventListener('click', () => {
         const lang = opt.getAttribute('data-value');
-        const flagClass = opt.querySelector('span').className;
-        const text = opt.textContent.trim();
-        
-        langBtn.innerHTML = `<span class="${flagClass}"></span> ${text} <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>`;
-        
-        languageSelect.value = lang;
-        updateLanguage();
+        setLanguage(lang);
     });
 });
-
-const translations = {
-    bg: { genres: "Музикални жанрове", countries: "Държави", all: "Всички", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classical", lofi: "Lofi / Chill", news: "News", loading: "Зареждане на станциите...", noStations: "Няма намерени станции.", failed: "Грешка при зареждане.", selectStation: "Изберете станция", genreCountry: "Жанр и Държава", stationsTitle: "Станции", favorites: "Любими / Playlist", share: "Сподели", searchPlaceholder: "Търси станция...", searchCountryPlaceholder: "Търси държава...", linkCopied: "Линкът е копиран!", noFavorites: "Няма любими станции.", bass: "Bass", mid: "Mid", treble: "Treble", songLoading: "Проверка...", songError: "На живо (Live Stream)", playNow: "Слушай сега", quickPicks: "Бърз избор", recentlyPlayed: "Наскоро слушани", clear: "Изчисти", sortClicks: "Най-пускани", sortName: "Азбучен ред", sortVotes: "Гласове", randomStation: "Произволно радио" },
-    en: { genres: "Music Genres", countries: "Countries", all: "All Stations", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classical", lofi: "Lofi / Chill", news: "News", loading: "Loading stations...", noStations: "No stations found.", failed: "Failed to load.", selectStation: "Select a station", genreCountry: "Genre & Country", stationsTitle: "Stations", favorites: "Favorites / Playlist", share: "Share", searchPlaceholder: "Search station...", searchCountryPlaceholder: "Search country...", linkCopied: "Link copied!", noFavorites: "No favorite stations.", bass: "Bass", mid: "Mid", treble: "Treble", songLoading: "Checking...", songError: "Live Stream", playNow: "Listen Now", quickPicks: "Quick Picks", recentlyPlayed: "Recently Played", clear: "Clear", sortClicks: "Most Played", sortName: "Alphabetical", sortVotes: "Votes", randomStation: "Random Radio" },
-    es: { genres: "Géneros Musicales", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clásica", lofi: "Lofi / Chill", news: "Noticias", loading: "Cargando estaciones...", noStations: "No se encontraron estaciones.", failed: "Error al cargar.", selectStation: "Selecciona una estación", genreCountry: "Género y País", stationsTitle: "Estaciones", favorites: "Favoritos", share: "Compartir", searchPlaceholder: "Buscar estación...", searchCountryPlaceholder: "Buscar país...", linkCopied: "¡Enlace copiado!", noFavorites: "No hay estaciones favoritas.", bass: "Bajos", mid: "Medios", treble: "Agudos", songLoading: "Comprobando...", songError: "En vivo", playNow: "Escuchar ahora", quickPicks: "Selección rápida", recentlyPlayed: "Escuchadas recientemente", clear: "Limpiar", sortClicks: "Más escuchadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Radio Aleatoria" },
-    fr: { genres: "Genres Musicaux", countries: "Pays", all: "Toutes", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classique", lofi: "Lofi / Chill", news: "Actualités", loading: "Chargement des stations...", noStations: "Aucune station trouvée.", failed: "Échec du chargement.", selectStation: "Sélectionnez une station", genreCountry: "Genre et Pays", stationsTitle: "Stations", favorites: "Favoris", share: "Partager", searchPlaceholder: "Rechercher une station...", searchCountryPlaceholder: "Rechercher un pays...", linkCopied: "Lien copié !", noFavorites: "Aucune station favorite.", bass: "Basses", mid: "Médiums", treble: "Aigus", songLoading: "Vérification...", songError: "En direct", playNow: "Écouter maintenant", quickPicks: "Choix rapides", recentlyPlayed: "Écoutées récemment", clear: "Effacer", sortClicks: "Les plus écoutées", sortName: "Alphabétique", sortVotes: "Votes", randomStation: "Radio Aléatoire" },
-    de: { genres: "Musikgenres", countries: "Länder", all: "Alle", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Klassik", lofi: "Lofi / Chill", news: "Nachrichten", loading: "Sender werden geladen...", noStations: "Keine Sender gefunden.", failed: "Laden fehlgeschlagen.", selectStation: "Sender auswählen", genreCountry: "Genre & Land", stationsTitle: "Sender", favorites: "Favoriten", share: "Teilen", searchPlaceholder: "Sender suchen...", searchCountryPlaceholder: "Land suchen...", linkCopied: "Link kopiert!", noFavorites: "Keine Favoriten.", bass: "Bass", mid: "Mitten", treble: "Höhen", songLoading: "Prüfen...", songError: "Live-Stream", playNow: "Jetzt hören", quickPicks: "Schnellauswahl", recentlyPlayed: "Zuletzt gehört", clear: "Löschen", sortClicks: "Meistgespielt", sortName: "Alphabetisch", sortVotes: "Stimmen", randomStation: "Zufälliges Radio" },
-    it: { genres: "Generi Musicali", countries: "Paesi", all: "Tutte", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Classica", lofi: "Lofi / Chill", news: "Notizie", loading: "Caricamento stazioni...", noStations: "Nessuna stazione trovata.", failed: "Caricamento fallito.", selectStation: "Seleziona una stazione", genreCountry: "Genere e Paese", stationsTitle: "Stazioni", favorites: "Preferiti", share: "Condividi", searchPlaceholder: "Cerca stazione...", searchCountryPlaceholder: "Cerca paese...", linkCopied: "Link copiato!", noFavorites: "Nessuna stazione preferita.", bass: "Bassi", mid: "Medi", treble: "Alti", songLoading: "Verifica...", songError: "In diretta", playNow: "Ascolta ora", quickPicks: "Scelte rapide", recentlyPlayed: "Ascoltate di recente", clear: "Cancella", sortClicks: "Più ascoltate", sortName: "Alfabetico", sortVotes: "Voti", randomStation: "Radio Casuale" },
-    pt: { genres: "Gêneros Musicais", countries: "Países", all: "Todas", pop: "Pop", rock: "Rock", jazz: "Jazz", classical: "Clássica", lofi: "Lofi / Chill", news: "Notícias", loading: "Carregando estações...", noStations: "Nenhuma estação encontrada.", failed: "Falha ao carregar.", selectStation: "Selecione uma estação", genreCountry: "Gênero e País", stationsTitle: "Estações", favorites: "Favoritos", share: "Compartilhar", searchPlaceholder: "Buscar estação...", searchCountryPlaceholder: "Buscar país...", linkCopied: "Link copiado!", noFavorites: "Nenhuma estação favorita.", bass: "Graves", mid: "Médios", treble: "Agudos", songLoading: "Verificando...", songError: "Ao vivo", playNow: "Ouvir agora", quickPicks: "Escolhas rápidas", recentlyPlayed: "Ouvidas recentemente", clear: "Limpar", sortClicks: "Mais tocadas", sortName: "Alfabético", sortVotes: "Votos", randomStation: "Rádio Aleatória" },
-    ru: { genres: "Музыкальные жанры", countries: "Страны", all: "Все", pop: "Поп", rock: "Рок", jazz: "Джаз", classical: "Классика", lofi: "Лофи / Чилл", news: "Новости", loading: "Загрузка станций...", noStations: "Станции не найдены.", failed: "Ошибка загрузки.", selectStation: "Выберите станцию", genreCountry: "Жанр и Страна", stationsTitle: "Станции", favorites: "Избранное", share: "Поделиться", searchPlaceholder: "Поиск станции...", searchCountryPlaceholder: "Поиск страны...", linkCopied: "Ссылка скопирована!", noFavorites: "Нет избранных станций.", bass: "Бас", mid: "Средние", treble: "Высокие", songLoading: "Проверка...", songError: "Прямой эфир", playNow: "Слушать сейчас", quickPicks: "Быстрый выбор", recentlyPlayed: "Недавно прослушанные", clear: "Очистить", sortClicks: "Самые популярные", sortName: "По алфавиту", sortVotes: "Голоса", randomStation: "Случайное радио" },
-    zh: { genres: "音乐流派", countries: "国家", all: "全部", pop: "流行", rock: "摇滚", jazz: "爵士", classical: "古典", lofi: "低保真 / 放松", news: "新闻", loading: "正在加载电台...", noStations: "未找到电台。", failed: "加载失败。", selectStation: "选择电台", genreCountry: "流派和国家", stationsTitle: "电台", favorites: "收藏", share: "分享", searchPlaceholder: "搜索电台...", searchCountryPlaceholder: "搜索国家...", linkCopied: "链接已复制！", noFavorites: "没有收藏的电台。", bass: "低音", mid: "中音", treble: "高音", songLoading: "检查中...", songError: "直播中", playNow: "立即收听", quickPicks: "快速选择", recentlyPlayed: "最近播放", clear: "清除", sortClicks: "最多播放", sortName: "字母顺序", sortVotes: "投票", randomStation: "随机电台" },
-    ja: { genres: "音楽ジャンル", countries: "国", all: "すべて", pop: "ポップス", rock: "ロック", jazz: "ジャズ", classical: "クラシック", lofi: "ローファイ", news: "ニュース", loading: "ステーションを読み込み中...", noStations: "ステーションが見つかりません。", failed: "読み込みに失敗しました。", selectStation: "ステーションを選択", genreCountry: "ジャンルと国", stationsTitle: "ステーション", favorites: "お気に入り", share: "共有", searchPlaceholder: "ステーションを検索...", searchCountryPlaceholder: "国を検索...", linkCopied: "リンクをコピーしました！", noFavorites: "お気に入りのステーションはありません。", bass: "低音", mid: "中音", treble: "高音", songLoading: "確認中...", songError: "ライブ放送", playNow: "今すぐ聴く", quickPicks: "クイックピック", recentlyPlayed: "最近再生した曲", clear: "クリア", sortClicks: "最も再生された", sortName: "アルファベット順", sortVotes: "投票", randomStation: "ランダムラジオ" }
-};
-
-function t(key) {
-    const lang = languageSelect.value;
-    return (translations[lang] && translations[lang][key]) || translations.bg[key] || key;
-}
-
-function updateLanguage() {
-    const lang = languageSelect.value;
-    document.querySelectorAll('[data-i18n]').forEach(el => {
-        const key = el.getAttribute('data-i18n');
-        if (translations[lang] && translations[lang][key]) el.textContent = translations[lang][key];
-    });
-    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
-        const key = el.getAttribute('data-i18n-placeholder');
-        if (translations[lang] && translations[lang][key]) el.placeholder = translations[lang][key];
-    });
-    renderFavorites();
-}
 
 function cleanString(str) {
     if (!str) return '';
@@ -112,8 +147,32 @@ function formatMetaLine(station) {
     return `${formattedTag} • ${country}`;
 }
 
+function copyStationShareLink(station, triggerEl) {
+    if (!station || !station.stationuuid) return;
+    const url = new URL(window.location.href);
+    url.searchParams.set('station', station.stationuuid);
+
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
+    navigator.clipboard.writeText(url.toString()).then(() => {
+        if (!triggerEl) return;
+        const originalHtml = triggerEl.innerHTML;
+        triggerEl.classList.add('copied');
+        triggerEl.innerHTML = '<i class="fa-solid fa-check"></i>';
+        setTimeout(() => {
+            triggerEl.classList.remove('copied');
+            triggerEl.innerHTML = originalHtml;
+        }, 1600);
+    }).catch(() => {});
+}
+
 // ======================== ЛЮБИМИ (PLAYLIST) ========================
-function getFavorites() { return JSON.parse(localStorage.getItem('radio_favorites') || '[]'); }
+function getFavorites() {
+    try {
+        return JSON.parse(localStorage.getItem('radio_favorites') || '[]');
+    } catch {
+        return [];
+    }
+}
 function setFavorites(favs) { localStorage.setItem('radio_favorites', JSON.stringify(favs)); }
 function isFavorite(uuid) { return getFavorites().some(s => s.stationuuid === uuid); }
 
@@ -137,15 +196,20 @@ function renderFavorites() {
     const favs = getFavorites();
     favoritesList.innerHTML = '';
     if (favs.length === 0) {
-        favoritesList.innerHTML = `<p style="font-size:0.8rem;color:var(--text-muted);padding:4px 12px;">${t('noFavorites')}</p>`;
+        const p = document.createElement('p');
+        p.className = 'empty-list-msg';
+        p.textContent = t('noFavorites');
+        favoritesList.appendChild(p);
         return;
     }
     favs.forEach(station => {
         const btn = document.createElement('button');
+        btn.type = 'button';
         btn.className = 'fav-sidebar-item';
         
         const img = document.createElement('img');
-        img.src = station.favicon || DEFAULT_ICON;
+        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.alt = '';
         img.onerror = () => { img.src = DEFAULT_ICON; };
 
         const info = document.createElement('div');
@@ -171,7 +235,11 @@ function renderFavorites() {
 
 // ======================== НАСКОРО СЛУШАНИ ========================
 function getRecentStations() {
-    return JSON.parse(localStorage.getItem('radio_recent') || '[]');
+    try {
+        return JSON.parse(localStorage.getItem('radio_recent') || '[]');
+    } catch {
+        return [];
+    }
 }
 
 function addRecentStation(station) {
@@ -204,7 +272,8 @@ function renderRecentStations() {
         card.className = 'recent-card';
 
         const img = document.createElement('img');
-        img.src = station.favicon || DEFAULT_ICON;
+        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.alt = '';
         img.onerror = () => { img.src = DEFAULT_ICON; };
 
         const info = document.createElement('div');
@@ -235,7 +304,7 @@ if (clearRecentBtn) {
 
 // ======================== БЪРЗ ИЗБОР ========================
 async function loadTopStations(type = 'global', query = '') {
-    quickPicksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Зареждане...</p>';
+    renderStatusMessage(quickPicksContainer, t('loadingTop'));
     let url = `${API_BASE}/topclick/8`;
     if (type === 'country' && query) {
         url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
@@ -245,8 +314,8 @@ async function loadTopStations(type = 'global', query = '') {
     try {
         const topStations = await fetchStations(url);
         renderQuickPicks(topStations);
-    } catch (e) {
-        quickPicksContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.9rem;">Грешка при зареждане.</p>';
+    } catch {
+        renderStatusMessage(quickPicksContainer, t('failed'), true);
     }
 }
 
@@ -254,10 +323,12 @@ function renderQuickPicks(stations) {
     quickPicksContainer.innerHTML = '';
     if (!stations || stations.length === 0) return;
     stations.forEach(station => {
+        if (!isSafeStreamUrl(station.url_resolved)) return;
         const div = document.createElement('div');
         div.className = 'quick-pick-item';
         const img = document.createElement('img');
-        img.src = station.favicon || DEFAULT_ICON;
+        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.alt = '';
         img.onerror = () => { img.src = DEFAULT_ICON; };
         const span = document.createElement('span');
         span.textContent = cleanString(station.name);
@@ -286,18 +357,28 @@ function updateThemeIcon() {
 
 // ======================== ЗАРЕЖДАНЕ НА СТАНЦИИ ========================
 async function loadStations(type, query, sort = 'clickcount') {
-    stationsContainer.innerHTML = `<p class="loading-text">${t('loading')}</p>`;
+    renderStatusMessage(stationsContainer, t('loading'));
     currentFilterType = type;
     currentFilterQuery = query;
     currentSort = sort;
+
+    if (type === 'country') {
+        selectedCountry = query;
+    } else if (type === 'genre' && query === 'all') {
+        selectedCountry = null;
+    }
 
     const cacheKey = `radio_cache_${type}_${query}_${sort}`;
     const cachedData = sessionStorage.getItem(cacheKey);
 
     if (cachedData) {
-        allStations = JSON.parse(cachedData);
-        displayStations(allStations);
-        return;
+        try {
+            allStations = JSON.parse(cachedData);
+            displayStations(allStations);
+            return;
+        } catch {
+            sessionStorage.removeItem(cacheKey);
+        }
     }
 
     let url = `${API_BASE}/topclick/60`;
@@ -312,23 +393,27 @@ async function loadStations(type, query, sort = 'clickcount') {
     try {
         let apiStations = await fetchStations(url);
         if (!Array.isArray(apiStations) || apiStations.length === 0) {
+            if (type === 'country') {
+                renderStatusMessage(stationsContainer, t('noStations'));
+                return;
+            }
             apiStations = await fetchStations(`${API_BASE}/topclick/60`);
         }
 
         const custom = await loadCustomStations();
-        let filteredCustom = custom;
+        let filteredCustom = Array.isArray(custom) ? custom : [];
         if (type === 'genre' && query !== 'all') {
-            filteredCustom = custom.filter(s => (s.tags || '').toLowerCase().includes(query.toLowerCase()));
+            filteredCustom = filteredCustom.filter(s => (s.tags || '').toLowerCase().includes(query.toLowerCase()));
         } else if (type === 'country') {
-            filteredCustom = custom.filter(s => (s.country || '').toLowerCase() === query.toLowerCase());
+            filteredCustom = filteredCustom.filter(s => (s.country || '').toLowerCase() === query.toLowerCase());
         }
 
         allStations = [...filteredCustom, ...apiStations];
         sortStationsLocally(sort);
         sessionStorage.setItem(cacheKey, JSON.stringify(allStations));
         displayStations(allStations);
-    } catch (error) {
-        stationsContainer.innerHTML = `<p style="color: #ef4444;">${t('failed')}</p>`;
+    } catch {
+        renderStatusMessage(stationsContainer, t('failed'), true);
     }
 }
 
@@ -342,7 +427,7 @@ function sortStationsLocally(sortType) {
     }
 }
 
-// ======================== ТЪРСЕНЕ И ИЗГЛЕД ========================
+// ======================== ТЪРСЕНЕ (СТАНЦИЯ + ДЪРЖАВА) ========================
 let searchTimeout;
 searchInput.addEventListener('input', (e) => {
     clearTimeout(searchTimeout);
@@ -353,45 +438,127 @@ searchInput.addEventListener('input', (e) => {
     }
 
     const lowerTerm = term.toLowerCase();
-    if (lowerTerm.length === 0) { displayStations(allStations); return; }
+    if (lowerTerm.length === 0) {
+        searchRequestId++;
+        displayStations(allStations);
+        return;
+    }
 
+    const reqId = ++searchRequestId;
     searchTimeout = setTimeout(async () => {
         try {
             const custom = await loadCustomStations();
-            const customMatches = custom.filter(s =>
-                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
-            );
-            const localMatches = allStations.filter(s =>
-                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
-            );
+            if (reqId !== searchRequestId) return;
+
+            const activeCountry = selectedCountry || (currentFilterType === 'country' ? currentFilterQuery : null);
+
+            const matchesQuery = (s) =>
+                (s.name || '').toLowerCase().includes(lowerTerm) ||
+                (s.tags || '').toLowerCase().includes(lowerTerm);
+
+            const matchesCountry = (s) => {
+                if (!activeCountry) return true;
+                const c = (s.country || '').toLowerCase();
+                const target = activeCountry.toLowerCase();
+                if (target === 'usa' || target === 'united states') {
+                    return c.includes('united states') || c.includes('usa');
+                }
+                if (target === 'uk' || target === 'united kingdom') {
+                    return c.includes('united kingdom') || c.includes('uk');
+                }
+                return c.includes(target);
+            };
+
+            const customMatches = (Array.isArray(custom) ? custom : []).filter(s => matchesQuery(s) && matchesCountry(s));
+            const localMatches = allStations.filter(s => matchesQuery(s) && matchesCountry(s));
 
             let apiResults = [];
             if (lowerTerm.length >= 2) {
-                apiResults = await fetchStations(`${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`);
+                const apiUrl = activeCountry
+                    ? `${API_BASE}/search?name=${encodeURIComponent(lowerTerm)}&country=${encodeURIComponent(activeCountry)}&limit=60`
+                    : `${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`;
+                apiResults = await fetchStations(apiUrl);
+                if (reqId !== searchRequestId) return;
             }
 
             const uniqueStations = new Map();
             customMatches.forEach(s => uniqueStations.set(s.stationuuid || s.name, s));
-            localMatches.forEach(s => { if (!uniqueStations.has(s.stationuuid || s.name)) uniqueStations.set(s.stationuuid || s.name, s); });
-            apiResults.forEach(s => { if (!uniqueStations.has(s.stationuuid || s.name)) uniqueStations.set(s.stationuuid || s.name, s); });
+            localMatches.forEach(s => {
+                if (!uniqueStations.has(s.stationuuid || s.name)) uniqueStations.set(s.stationuuid || s.name, s);
+            });
+            if (Array.isArray(apiResults)) {
+                apiResults.forEach(s => {
+                    if (!uniqueStations.has(s.stationuuid || s.name)) uniqueStations.set(s.stationuuid || s.name, s);
+                });
+            }
 
             displayStations(Array.from(uniqueStations.values()));
-        } catch (err) {
+        } catch {
+            if (reqId !== searchRequestId) return;
             const filtered = allStations.filter(s =>
                 (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
             );
             displayStations(filtered);
         }
-    }, 400);
+    }, 350);
 });
 
 const countrySearchInput = document.getElementById('country-search-input');
-if (countrySearchInput) {
-    countrySearchInput.addEventListener('input', (e) => {
-        const term = e.target.value.toLowerCase();
-        document.querySelectorAll('#country-buttons .cat-btn').forEach(btn => {
-            btn.style.display = btn.textContent.toLowerCase().includes(term) ? 'flex' : 'none';
+const toggleMoreCountriesBtn = document.getElementById('toggle-more-countries-btn');
+const INITIAL_VISIBLE_COUNTRIES = 10;
+let showAllCountries = false;
+
+function updateCountriesVisibility() {
+    const buttons = Array.from(document.querySelectorAll('#country-buttons .cat-btn'));
+    const term = countrySearchInput ? countrySearchInput.value.toLowerCase().trim() : '';
+
+    if (term.length > 0) {
+        buttons.forEach(btn => {
+            const matches = btn.textContent.toLowerCase().includes(term);
+            btn.style.display = matches ? 'flex' : 'none';
         });
+        if (toggleMoreCountriesBtn) {
+            toggleMoreCountriesBtn.style.display = 'none';
+        }
+        return;
+    }
+
+    buttons.forEach((btn, index) => {
+        const shouldShow = showAllCountries || index < INITIAL_VISIBLE_COUNTRIES;
+        btn.style.display = shouldShow ? 'flex' : 'none';
+    });
+
+    if (toggleMoreCountriesBtn) {
+        toggleMoreCountriesBtn.style.display = buttons.length > INITIAL_VISIBLE_COUNTRIES ? 'flex' : 'none';
+        const label = showAllCountries
+            ? t('hideCountries')
+            : `${t('moreCountries')} (${buttons.length - INITIAL_VISIBLE_COUNTRIES})`;
+        const iconClass = showAllCountries ? 'fa-solid fa-chevron-up' : 'fa-solid fa-chevron-down';
+        toggleMoreCountriesBtn.innerHTML = `<i class="${iconClass}"></i> <span></span>`;
+        toggleMoreCountriesBtn.querySelector('span').textContent = label;
+    }
+}
+
+if (toggleMoreCountriesBtn) {
+    toggleMoreCountriesBtn.addEventListener('click', () => {
+        showAllCountries = !showAllCountries;
+        updateCountriesVisibility();
+    });
+}
+
+if (countrySearchInput) {
+    countrySearchInput.addEventListener('input', () => {
+        updateCountriesVisibility();
+    });
+
+    countrySearchInput.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter') return;
+        const visibleButtons = Array.from(document.querySelectorAll('#country-buttons .cat-btn'))
+            .filter(btn => btn.style.display !== 'none');
+
+        if (visibleButtons.length === 1) {
+            visibleButtons[0].click();
+        }
     });
 }
 
@@ -407,22 +574,25 @@ sortButtons.forEach(btn => {
 viewGridBtn.addEventListener('click', () => {
     viewGridBtn.classList.add('active');
     viewListBtn.classList.remove('active');
-    stationsContainer.className = 'grid-view';
+    stationsContainer.classList.remove('list-view');
+    stationsContainer.classList.add('grid-view');
 });
 
 viewListBtn.addEventListener('click', () => {
     viewListBtn.classList.add('active');
     viewGridBtn.classList.remove('active');
-    stationsContainer.className = 'list-view';
+    stationsContainer.classList.remove('grid-view');
+    stationsContainer.classList.add('list-view');
 });
 
 // ======================== ВИЗУАЛИЗИРАНЕ НА КАРТИТЕ ========================
 function displayStations(stations) {
     stationsContainer.innerHTML = '';
-    displayedStations = stations.filter(s => s.url_resolved && s.url_resolved.trim() !== '');
+    displayedStations = (Array.isArray(stations) ? stations : [])
+        .filter(s => isSafeStreamUrl(s.url_resolved));
 
     if (displayedStations.length === 0) {
-        stationsContainer.innerHTML = `<p>${t('noStations')}</p>`;
+        renderStatusMessage(stationsContainer, t('noStations'));
         return;
     }
 
@@ -435,7 +605,7 @@ function displayStations(stations) {
         if (isCurrentPlaying) card.classList.add('playing');
 
         let favicon = station.favicon;
-        if (!favicon || favicon.trim() === '' || favicon.includes('placeholder')) favicon = DEFAULT_ICON;
+        if (!isSafeStreamUrl(favicon) || favicon.includes('placeholder')) favicon = DEFAULT_ICON;
 
         const img = document.createElement('img');
         img.className = 'station-logo';
@@ -468,8 +638,19 @@ function displayStations(stations) {
             playIndicator.innerHTML = '<i class="fa-solid fa-play"></i>';
         }
 
+        const cardShareBtn = document.createElement('button');
+        cardShareBtn.className = 'card-share-btn';
+        cardShareBtn.type = 'button';
+        cardShareBtn.title = t('share');
+        cardShareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
+        cardShareBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            copyStationShareLink(station, cardShareBtn);
+        });
+
         const favBtn = document.createElement('button');
         favBtn.className = 'fav-btn';
+        favBtn.type = 'button';
         if (isFavorite(station.stationuuid)) {
             favBtn.classList.add('active');
             favBtn.innerHTML = '<i class="fa-solid fa-heart"></i>';
@@ -482,6 +663,7 @@ function displayStations(stations) {
         });
 
         actionsDiv.appendChild(playIndicator);
+        actionsDiv.appendChild(cardShareBtn);
         actionsDiv.appendChild(favBtn);
 
         card.appendChild(img);
@@ -508,30 +690,32 @@ function updateActiveCardHighlight() {
 
 // ======================== ПУСКАНЕ НА СТАНЦИЯ ========================
 async function playStation(station) {
-    if (!station || !station.url_resolved) return;
+    if (!station || !isSafeStreamUrl(station.url_resolved)) return;
     currentStation = station;
     audioStream.src = station.url_resolved;
 
     audioStream.onerror = () => {
+        setVisualizerPlayingState(false);
         liveDot.classList.remove('active');
         songInfoContainer.style.display = 'flex';
-        songInfoText.textContent = "⚠️ Стриймът е недостъпен.";
-        stationName.textContent = cleanString(station.name) + " (Офлайн)";
+        songInfoText.textContent = `⚠️ ${t('streamUnavailable')}`;
+        stationName.textContent = `${cleanString(station.name)} ${t('offlineSuffix')}`;
         updateActiveCardHighlight();
     };
 
     try {
         await audioStream.play();
-    } catch (e) {
+    } catch {
+        setVisualizerPlayingState(false);
         songInfoContainer.style.display = 'flex';
-        songInfoText.textContent = "⚠️ Натиснете Play за старт.";
+        songInfoText.textContent = `⚠️ ${t('pressPlayToStart')}`;
         return;
     }
 
     const name = cleanString(station.name);
     stationName.textContent = name;
     stationDetails.textContent = formatMetaLine(station);
-    stationIcon.src = station.favicon || DEFAULT_ICON;
+    stationIcon.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
     stationIcon.onerror = () => { stationIcon.src = DEFAULT_ICON; };
     shareBtn.disabled = false;
 
@@ -541,8 +725,11 @@ async function playStation(station) {
     songInfoContainer.style.display = 'flex';
     checkCurrentSong(station);
 
-    if (!audioContext) initAudioGraph(audioStream, null);
-    if (audioContext && audioContext.state === 'suspended') await audioContext.resume();
+    initAudioGraph(audioStream, visualizerCanvas);
+    if (audioContext && audioContext.state === 'suspended') {
+        await audioContext.resume();
+    }
+    setVisualizerPlayingState(true);
 }
 
 refreshSongBtn.addEventListener('click', () => {
@@ -569,7 +756,7 @@ async function checkCurrentSong(station) {
             title = currentSource.title || currentSource.artist_t || currentSource.song || '';
         }
         songInfoText.textContent = title ? title : t('songError');
-    } catch (e) {
+    } catch {
         songInfoText.textContent = t('songError');
     }
 }
@@ -591,13 +778,15 @@ nextStationBtn.addEventListener('click', () => {
 
 shareBtn.addEventListener('click', () => {
     if (!currentStation) return;
-    const url = new URL(window.location);
+    const url = new URL(window.location.href);
     url.searchParams.set('station', currentStation.stationuuid);
+    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
     navigator.clipboard.writeText(url.toString()).then(() => {
         const original = shareBtn.innerHTML;
-        shareBtn.innerHTML = `<i class="fa-solid fa-check"></i> ${t('linkCopied')}`;
+        shareBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span></span>`;
+        shareBtn.querySelector('span').textContent = t('linkCopied');
         setTimeout(() => { shareBtn.innerHTML = original; }, 2000);
-    });
+    }).catch(() => {});
 });
 
 allCategoryButtons.forEach(btn => {
@@ -606,12 +795,13 @@ allCategoryButtons.forEach(btn => {
         btn.classList.add('active');
         const genre = btn.getAttribute('data-genre');
         const country = btn.getAttribute('data-country');
-        const activeSort = document.querySelector('.sort-btn.active').getAttribute('data-sort');
+        const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
         
         if (genre) {
             loadStations('genre', genre, activeSort);
             loadTopStations('genre', genre);
         } else if (country) {
+            selectedCountry = country;
             loadStations('country', country, activeSort);
             loadTopStations('country', country);
         }
@@ -627,10 +817,11 @@ playRandomBtn.addEventListener('click', () => {
 
 playRandomGlobalBtn.addEventListener('click', async () => {
     const originalHtml = playRandomGlobalBtn.innerHTML;
-    playRandomGlobalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Търсене...';
+    playRandomGlobalBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span></span>`;
+    playRandomGlobalBtn.querySelector('span').textContent = t('searching');
     try {
         const stations = await fetchStations(`${API_BASE}/topclick/100`);
-        const validStations = stations.filter(s => s.url_resolved && s.url_resolved.trim() !== '');
+        const validStations = (Array.isArray(stations) ? stations : []).filter(s => isSafeStreamUrl(s.url_resolved));
         if (validStations.length > 0) {
             const randomIndex = Math.floor(Math.random() * validStations.length);
             playStation(validStations[randomIndex]);
@@ -650,13 +841,20 @@ const volumeIcon = document.getElementById('volume-icon');
 
 let lastVolume = 1;
 
-playPauseBtn.addEventListener('click', () => {
+playPauseBtn.addEventListener('click', async () => {
     if (!currentStation && displayedStations.length > 0) {
         playStation(displayedStations[0]);
         return;
     }
     if (audioStream.paused) {
-        audioStream.play();
+        try {
+            await audioStream.play();
+            if (audioContext && audioContext.state === 'suspended') {
+                await audioContext.resume();
+            }
+        } catch (e) {
+            console.warn('Playback start error:', e);
+        }
     } else {
         audioStream.pause();
     }
@@ -665,12 +863,14 @@ playPauseBtn.addEventListener('click', () => {
 audioStream.addEventListener('play', () => {
     playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
     liveDot.classList.add('active');
+    setVisualizerPlayingState(true);
     updateActiveCardHighlight();
 });
 
 audioStream.addEventListener('pause', () => {
     playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     liveDot.classList.remove('active');
+    setVisualizerPlayingState(false);
     updateActiveCardHighlight();
 });
 
@@ -730,7 +930,7 @@ if (sleepTimerBtn) {
 
     document.querySelectorAll('.timer-opt').forEach(btn => {
         btn.addEventListener('click', () => {
-            const mins = parseInt(btn.getAttribute('data-mins'));
+            const mins = parseInt(btn.getAttribute('data-mins'), 10);
             setSleepTimer(mins);
             sleepTimerMenu.style.display = 'none';
         });
@@ -752,9 +952,9 @@ function setSleepTimer(mins) {
     let timeLeft = mins * 60;
     
     sleepTimerInterval = setInterval(() => {
-        let m = Math.floor(timeLeft / 60);
-        let s = timeLeft % 60;
-        timerCountdown.textContent = `Остават: ${m}:${s < 10 ? '0' : ''}${s}`;
+        const m = Math.floor(timeLeft / 60);
+        const s = timeLeft % 60;
+        timerCountdown.textContent = `${t('remainingPrefix')} ${m}:${s < 10 ? '0' : ''}${s}`;
         
         if (timeLeft <= 0) {
             clearInterval(sleepTimerInterval);
@@ -789,9 +989,11 @@ if (fullscreenVisBtn) {
 
 // ======================== СТАРТИРАНЕ ========================
 document.addEventListener('DOMContentLoaded', async () => {
-    updateLanguage();
-    renderFavorites();
+    setLanguage(detectInitialLanguage());
     renderRecentStations();
+    if (visualizerCanvas) {
+        startVisualizer(visualizerCanvas);
+    }
     await loadCustomStations();
     loadTopStations();
 
@@ -800,11 +1002,11 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     if (stationUuid) {
         const custom = await loadCustomStations();
-        const customMatch = custom.find(s => s.stationuuid === stationUuid);
+        const customMatch = (Array.isArray(custom) ? custom : []).find(s => s.stationuuid === stationUuid);
         if (customMatch) { playStation(customMatch); return; }
 
         try {
-            const data = await fetchStations(`${API_BASE}/byuuid/${stationUuid}`);
+            const data = await fetchStations(`${API_BASE}/byuuid/${encodeURIComponent(stationUuid)}`);
             if (Array.isArray(data) && data.length > 0) {
                 playStation(data[0]);
                 return;
@@ -812,6 +1014,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         } catch (e) { console.log('Share load error:', e); }
     }
 
-    const activeSort = document.querySelector('.sort-btn.active').getAttribute('data-sort');
+    const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
     loadStations('genre', 'all', activeSort);
 });
