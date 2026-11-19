@@ -23,7 +23,7 @@
         <div class="header-controls">
             <div class="custom-lang-select" id="lang-select-container">
                 <button class="lang-btn" id="lang-btn">
-                    <span class="fi fi-gb"></span> English <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
+                    <span class="fi fi-bg"></span> Български <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
                 </button>
                 <div class="lang-dropdown" id="lang-dropdown">
                     <div class="lang-option" data-value="bg"><span class="fi fi-bg"></span> Български</div>
@@ -39,8 +39,8 @@
                 </div>
             </div>
             <select id="language-select" style="display:none;">
-                <option value="bg">bg</option>
-                <option value="en" selected>en</option>
+                <option value="bg" selected>bg</option>
+                <option value="en">en</option>
                 <option value="es">es</option>
                 <option value="fr">fr</option>
                 <option value="de">de</option>
@@ -106,7 +106,7 @@
             </div>
 
             <div class="filter-group">
-                <h3 data-i18n="favorites">Любими</h3>
+                <h3 data-i18n="favorites">Любими / Playlist</h3>
                 <div class="categories-list favorites-list" id="favorites-list"></div>
             </div>
         </aside>
@@ -124,24 +124,19 @@
                     </div>
                 </div>
 
+                <!-- ФИКСИРАН ДОЛЕН ПЛЕЙЪР -->
                 <div class="player-card">
                     <div class="now-playing-info">
                         <img id="station-icon" src="https://cdn-icons-png.flaticon.com/512/2950/2950683.png" alt="Logo">
-                        <div>
+                        <div class="now-playing-meta">
                             <h2 id="station-name" data-i18n="selectStation">Изберете станция</h2>
                             <p id="station-details" data-i18n="genreCountry">Жанр и Държава</p>
+                            <div class="now-playing-song" id="song-info-container" style="display: none;">
+                                <i class="fa-solid fa-music"></i>
+                                <span id="song-info-text">Проверка на песента...</span>
+                                <button id="refresh-song-btn" class="mini-refresh-btn" title="Обнови"><i class="fa-solid fa-rotate-right"></i></button>
+                            </div>
                         </div>
-                    </div>
-
-                    <div class="now-playing-song" id="song-info-container" style="display: none;">
-                        <i class="fa-solid fa-music"></i>
-                        <span id="song-info-text">Проверка на песента...</span>
-                        <button id="refresh-song-btn" class="icon-btn" title="Обнови" style="margin-left: auto;"><i class="fa-solid fa-rotate-right"></i></button>
-                    </div>
-
-                    <div class="visualizer-wrapper" style="position: relative;">
-                        <canvas id="visualizer" width="800" height="60"></canvas>
-                        <button id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор" style="position: absolute; right: 8px; top: 8px;"><i class="fa-solid fa-expand"></i></button>
                     </div>
 
                     <div class="eq-controls">
@@ -149,27 +144,32 @@
                         <label data-i18n="mid">Mid</label> <input type="range" id="eq-mid" min="-12" max="12" value="0">
                         <label data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0">
                         
-                        <div class="sleep-timer-dropdown-container" style="position: relative; display: inline-block; margin-left: auto;">
+                        <div class="sleep-timer-dropdown-container">
                             <button id="sleep-timer-btn" class="icon-btn" title="Сън таймер"><i class="fa-regular fa-clock"></i></button>
-                            <div class="sleep-timer-menu" id="sleep-timer-menu" style="display: none; position: absolute; bottom: 100%; right: 0; background: var(--bg-sidebar); border: 1px solid var(--border); border-radius: 8px; padding: 10px; flex-direction: column; gap: 6px; width: 130px; z-index: 100; backdrop-filter: var(--glass-blur);">
+                            <div class="sleep-timer-menu" id="sleep-timer-menu">
                                 <span style="font-size: 0.75rem; color: var(--text-muted);">Сън таймер:</span>
-                                <button class="timer-opt" data-mins="0" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">Изключен</button>
-                                <button class="timer-opt" data-mins="15" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">15 мин</button>
-                                <button class="timer-opt" data-mins="30" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">30 мин</button>
-                                <button class="timer-opt" data-mins="45" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">45 мин</button>
-                                <button class="timer-opt" data-mins="60" style="background:transparent; border:none; color:var(--text-main); text-align:left; cursor:pointer; font-size:0.8rem;">60 мин</button>
+                                <button class="timer-opt" data-mins="0">Изключен</button>
+                                <button class="timer-opt" data-mins="15">15 мин</button>
+                                <button class="timer-opt" data-mins="30">30 мин</button>
+                                <button class="timer-opt" data-mins="45">45 мин</button>
+                                <button class="timer-opt" data-mins="60">60 мин</button>
                                 <div id="timer-countdown" style="font-size:0.7rem; color:var(--accent); display:none;"></div>
                             </div>
                         </div>
+                        <button id="fullscreen-vis-btn" class="icon-btn" title="Цял екран визуализатор"><i class="fa-solid fa-expand"></i></button>
                     </div>
 
                     <div class="custom-player">
                         <audio id="audio-stream" crossorigin="anonymous"></audio>
+                        <button id="prev-station-btn" class="nav-player-btn" title="Предишна станция"><i class="fa-solid fa-backward-step"></i></button>
                         <button id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
-                        <div class="time-display">
+                        <button id="next-station-btn" class="nav-player-btn" title="Следваща станция"><i class="fa-solid fa-forward-step"></i></button>
+                        
+                        <div class="live-status">
+                            <span class="live-dot" id="live-dot"></span>
                             <span id="current-time">0:00</span>
                         </div>
-                        <input type="range" id="seek-slider" class="seek-slider" value="0" min="0" max="100" step="0.1">
+
                         <div class="volume-container">
                             <i class="fa-solid fa-volume-high" id="volume-icon" style="cursor: pointer;" title="Mute / Unmute"></i>
                             <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="1">
@@ -182,6 +182,7 @@
                 </div>
             </div>
 
+            <!-- БЪРЗ ИЗБОР -->
             <div class="quick-picks-wrapper">
                 <h3 data-i18n="quickPicks">Бърз избор</h3>
                 <div class="quick-picks" id="quick-picks-container">
@@ -189,16 +190,32 @@
                 </div>
             </div>
 
+            <!-- НАСКОРО СЛУШАНИ (НОВ МОДУЛ) -->
+            <div class="recently-played-wrapper" id="recently-played-wrapper" style="display: none;">
+                <div class="section-sub-header">
+                    <h3 data-i18n="recentlyPlayed">Наскоро слушани</h3>
+                    <button id="clear-recent-btn" class="clear-btn" data-i18n="clear">Изчисти</button>
+                </div>
+                <div class="recently-played-row" id="recently-played-container"></div>
+            </div>
+
+            <!-- ОСНОВНИ СТАНЦИИ -->
             <div class="stations-grid-wrapper">
                 <div class="stations-header">
                     <h3 id="section-title" data-i18n="stationsTitle">Станции</h3>
-                    <div class="sort-controls" id="sort-controls">
-                        <button class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
-                        <button class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
-                        <button class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
+                    <div class="controls-right">
+                        <div class="sort-controls" id="sort-controls">
+                            <button class="sort-btn active" data-sort="clickcount"><i class="fa-solid fa-fire"></i> <span data-i18n="sortClicks">Най-пускани</span></button>
+                            <button class="sort-btn" data-sort="name"><i class="fa-solid fa-arrow-down-a-z"></i> <span data-i18n="sortName">Азбучен ред</span></button>
+                            <button class="sort-btn" data-sort="votes"><i class="fa-solid fa-thumbs-up"></i> <span data-i18n="sortVotes">Гласове</span></button>
+                        </div>
+                        <div class="view-toggle">
+                            <button class="view-btn active" id="view-grid-btn" title="Мрежа"><i class="fa-solid fa-grip"></i> Grid</button>
+                            <button class="view-btn" id="view-list-btn" title="Списък"><i class="fa-solid fa-list"></i> List</button>
+                        </div>
                     </div>
                 </div>
-                <div id="stations-container">
+                <div id="stations-container" class="grid-view">
                     <p class="loading-text" data-i18n="loading">Зареждане...</p>
                 </div>
             </div>
@@ -212,12 +229,6 @@
         <canvas id="fullscreen-visualizer" style="width: 80vw; height: 60vh; background: rgba(0,0,0,0.5); border-radius: 12px;"></canvas>
     </div>
 
-    <footer class="footer">
-        <p data-i18n="footer">🔒 Без бисквитки, без регистрация, без следене. Чисто музикално изживяване.</p>
-    </footer>
-
     <script type="module" src="script.js"></script>
-
-    <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "886e5dc4d5d345cc90bfafcdade40516"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>

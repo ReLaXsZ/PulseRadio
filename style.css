@@ -2,32 +2,32 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;800&display=swap');
 
 :root {
-    --bg-main: #0f172a;
-    --bg-sidebar: rgba(15, 23, 42, 0.40);
-    --bg-card: rgba(30, 41, 59, 0.30);
-    --bg-card-hover: rgba(51, 65, 85, 0.50);
+    --bg-main: #0b0f19;
+    --bg-sidebar: rgba(15, 23, 42, 0.45);
+    --bg-card: rgba(30, 41, 59, 0.35);
+    --bg-card-hover: rgba(51, 65, 85, 0.55);
     --text-main: #f8fafc;
     --text-muted: #94a3b8;
     --accent: #38bdf8;
     --accent-hover: #0ea5e9;
-    --border: rgba(255, 255, 255, 0.15);
-    --player-bg: rgba(15, 23, 42, 0.85);
-    --input-bg: rgba(15, 23, 42, 0.4);
+    --border: rgba(255, 255, 255, 0.12);
+    --player-bg: rgba(11, 15, 25, 0.88);
+    --input-bg: rgba(15, 23, 42, 0.45);
     --glass-blur: blur(20px);
 }
 
 body.light-theme {
     --bg-main: #f1f5f9;
-    --bg-sidebar: rgba(255, 255, 255, 0.50);
-    --bg-card: rgba(255, 255, 255, 0.40);
-    --bg-card-hover: rgba(255, 255, 255, 0.70);
+    --bg-sidebar: rgba(255, 255, 255, 0.55);
+    --bg-card: rgba(255, 255, 255, 0.45);
+    --bg-card-hover: rgba(255, 255, 255, 0.75);
     --text-main: #0f172a;
     --text-muted: #64748b;
     --accent: #0284c7;
     --accent-hover: #0369a1;
-    --border: rgba(255, 255, 255, 0.5);
-    --player-bg: rgba(255, 255, 255, 0.90);
-    --input-bg: rgba(255, 255, 255, 0.5);
+    --border: rgba(15, 23, 42, 0.12);
+    --player-bg: rgba(255, 255, 255, 0.92);
+    --input-bg: rgba(255, 255, 255, 0.6);
 }
 
 * {
@@ -44,6 +44,7 @@ body {
     background-attachment: fixed;
     background-color: var(--bg-main);
     color: var(--text-main);
+    min-height: 100vh;
     height: 100vh;
     display: flex;
     flex-direction: column;
@@ -56,7 +57,7 @@ body.light-theme {
 
 /* Header */
 .top-header {
-    height: 70px;
+    height: 66px;
     background-color: var(--bg-sidebar);
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
@@ -81,16 +82,20 @@ body.light-theme {
 .header-controls {
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 12px;
 }
 
 .icon-btn {
     background: rgba(255, 255, 255, 0.05);
     border: 1px solid var(--border);
     color: var(--text-main);
-    font-size: 1.1rem;
+    font-size: 1rem;
     cursor: pointer;
-    padding: 8px;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 50%;
     transition: all 0.2s;
 }
@@ -123,7 +128,7 @@ body.light-theme {
     border: 1px solid var(--border);
     color: var(--text-main);
     padding: 6px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
     backdrop-filter: var(--glass-blur);
     display: flex;
@@ -136,16 +141,17 @@ body.light-theme {
     position: absolute;
     top: 100%;
     right: 0;
-    background: var(--bg-sidebar);
+    background: var(--player-bg);
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
-    border-radius: 8px;
+    border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.4);
     display: none;
     flex-direction: column;
-    width: 150px;
+    width: 155px;
     z-index: 100;
-    margin-top: 5px;
+    margin-top: 6px;
+    overflow: hidden;
 }
 
 .lang-dropdown.show {
@@ -153,7 +159,7 @@ body.light-theme {
 }
 
 .lang-option {
-    padding: 8px 12px;
+    padding: 9px 12px;
     display: flex;
     align-items: center;
     gap: 8px;
@@ -171,21 +177,21 @@ body.light-theme {
     display: flex;
     flex: 1;
     overflow: hidden;
-    padding-bottom: 95px; /* Място отдолу за плаващия плейър */
+    padding-bottom: 86px;
 }
 
 /* Sidebar */
 .sidebar {
-    width: 280px;
+    width: 265px;
     background-color: var(--bg-sidebar);
     backdrop-filter: var(--glass-blur);
     border-right: 1px solid var(--border);
-    padding: 20px;
+    padding: 18px;
     overflow-y: auto;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
 }
 
 .search-box {
@@ -195,21 +201,23 @@ body.light-theme {
 
 .search-box i {
     position: absolute;
-    left: 14px;
+    left: 13px;
     top: 50%;
     transform: translateY(-50%);
     color: var(--text-muted);
+    font-size: 0.85rem;
 }
 
 .search-box input {
     width: 100%;
-    padding: 10px 14px 10px 40px;
+    padding: 9px 12px 9px 36px;
     background-color: var(--input-bg);
     border: 1px solid var(--border);
     border-radius: 8px;
     color: var(--text-main);
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     outline: none;
+    transition: border-color 0.2s;
 }
 
 .search-box input:focus {
@@ -219,20 +227,21 @@ body.light-theme {
 .filter-group {
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
 }
 
 .filter-group h3 {
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     text-transform: uppercase;
     color: var(--text-muted);
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
+    font-weight: 600;
 }
 
 .categories-list {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 3px;
 }
 
 .cat-btn {
@@ -241,13 +250,13 @@ body.light-theme {
     color: var(--text-main);
     text-align: left;
     padding: 8px 12px;
-    border-radius: 6px;
+    border-radius: 8px;
     cursor: pointer;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     transition: all 0.2s;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
 }
 
 .cat-btn:hover {
@@ -264,42 +273,85 @@ body.light-theme {
 .countries-grid {
     display: flex;
     flex-direction: column;
-    gap: 4px;
-    max-height: 180px;
+    gap: 3px;
+    max-height: 170px;
     overflow-y: auto;
+}
+
+/* Playlist / Favorites in Sidebar */
+.fav-sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    text-align: left;
+    transition: all 0.2s;
+}
+
+.fav-sidebar-item:hover {
+    background-color: var(--bg-card-hover);
+}
+
+.fav-sidebar-item img {
+    width: 30px;
+    height: 30px;
+    border-radius: 6px;
+    object-fit: contain;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.fav-sidebar-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.fav-sidebar-info .fav-name {
+    display: block;
+    font-size: 0.82rem;
+    font-weight: 500;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.fav-sidebar-info .fav-meta {
+    display: block;
+    font-size: 0.7rem;
+    color: var(--text-muted);
 }
 
 /* Content Area */
 .content-area {
     flex: 1;
-    padding: 24px;
+    padding: 24px 28px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-}
-
-.dashboard-top {
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 20px;
+    gap: 26px;
 }
 
 .hero-section {
-    background: var(--bg-card);
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.45), rgba(15, 23, 42, 0.3));
     backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     border-radius: 16px;
-    padding: 24px;
+    padding: 24px 28px;
     display: flex;
     flex-direction: column;
     justify-content: center;
 }
 
 .hero-content h1 {
-    font-size: 1.8rem;
-    margin-bottom: 12px;
+    font-size: 1.85rem;
+    margin-bottom: 14px;
     font-family: 'Montserrat', sans-serif;
+    letter-spacing: -0.02em;
 }
 
 .hero-buttons {
@@ -316,8 +368,9 @@ body.light-theme {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: 0.9rem;
+    font-size: 0.88rem;
     border: 1px solid var(--border);
+    transition: all 0.2s;
 }
 
 .hero-btn {
@@ -326,12 +379,356 @@ body.light-theme {
     border-color: var(--accent);
 }
 
+.hero-btn:hover {
+    background-color: var(--accent-hover);
+    transform: translateY(-1px);
+}
+
 .hero-btn-secondary {
     background-color: var(--bg-card);
     color: var(--text-main);
 }
 
-/* === ФИКСИРАН БАЛАНСИРАН ДОЛЕН ПЛЕЙЪР (С Екстрите, Без Таговете) === */
+.hero-btn-secondary:hover {
+    background-color: var(--bg-card-hover);
+    border-color: var(--accent);
+}
+
+/* === QUICK PICKS (ЕДНАКВИ КВАДРАТИ БЕЗ ФОН ЗАД ИКОНИТЕ) === */
+.quick-picks-wrapper h3,
+.section-sub-header h3 {
+    font-size: 0.95rem;
+    color: var(--text-main);
+    font-weight: 600;
+    margin-bottom: 12px;
+}
+
+.quick-picks {
+    display: flex;
+    gap: 14px;
+    overflow-x: auto;
+    padding-bottom: 6px;
+}
+
+.quick-pick-item {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 10px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    width: 96px;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.quick-pick-item:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+    transform: translateY(-3px);
+}
+
+.quick-pick-item img {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    object-fit: contain;
+    background: transparent;
+}
+
+.quick-pick-item span {
+    font-size: 0.75rem;
+    font-weight: 500;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    width: 100%;
+    color: var(--text-main);
+}
+
+/* === RECENTLY PLAYED (НАСКОРО СЛУШАНИ) === */
+.section-sub-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.section-sub-header h3 {
+    margin-bottom: 0;
+}
+
+.clear-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 0.75rem;
+    padding: 4px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.clear-btn:hover {
+    color: var(--accent);
+    border-color: var(--accent);
+}
+
+.recently-played-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+}
+
+.recent-card {
+    background: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 10px 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.recent-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--accent);
+}
+
+.recent-card img {
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    object-fit: contain;
+    background: transparent;
+    flex-shrink: 0;
+}
+
+.recent-card-info {
+    min-width: 0;
+    flex: 1;
+}
+
+.recent-card-info h4 {
+    font-size: 0.85rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 2px;
+}
+
+.recent-card-info p {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* === STATIONS HEADER & CONTROLS === */
+.stations-grid-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding-bottom: 30px;
+}
+
+.stations-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.stations-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.controls-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.sort-controls, .view-toggle {
+    display: flex;
+    gap: 6px;
+}
+
+.sort-btn, .view-btn {
+    background-color: var(--bg-sidebar);
+    border: 1px solid var(--border);
+    color: var(--text-muted);
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 0.78rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s;
+}
+
+.sort-btn.active, .sort-btn:hover,
+.view-btn.active, .view-btn:hover {
+    background-color: var(--accent);
+    color: #0f172a;
+    border-color: var(--accent);
+    font-weight: 600;
+}
+
+/* === ИЗЧИСТЕНИ КАРТИ НА СТАНЦИИ (4 КОЛОНИ, БЕЗ ЧЕРЕН ФОН ЗАД ЛОГОТО) === */
+#stations-container.grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 18px;
+}
+
+#stations-container.list-view {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.station-card {
+    background-color: var(--bg-card);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    position: relative;
+    transition: all 0.25s ease;
+}
+
+.station-card:hover {
+    background-color: var(--bg-card-hover);
+    border-color: var(--accent);
+    transform: translateY(-2px);
+}
+
+/* Активна свиреща станция */
+.station-card.playing {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.14), rgba(30, 41, 59, 0.45));
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.18);
+}
+
+.station-logo {
+    width: 48px;
+    height: 48px;
+    border-radius: 10px;
+    object-fit: contain;
+    background-color: transparent;
+    flex-shrink: 0;
+}
+
+.station-info-text {
+    flex: 1;
+    min-width: 0;
+}
+
+.station-info-text h4 {
+    font-size: 0.92rem;
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-bottom: 4px;
+    color: var(--text-main);
+}
+
+.station-meta-line {
+    font-size: 0.76rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.station-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-shrink: 0;
+}
+
+.play-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text-main);
+    font-size: 0.85rem;
+    transition: all 0.2s;
+}
+
+.station-card:hover .play-btn {
+    color: var(--accent);
+}
+
+/* Анимиран еквалайзер за активната карта */
+.equalizer-bars {
+    display: flex;
+    align-items: flex-end;
+    gap: 2px;
+    height: 16px;
+    width: 32px;
+    justify-content: center;
+}
+
+.equalizer-bars span {
+    display: block;
+    width: 3px;
+    background-color: var(--accent);
+    border-radius: 2px;
+    animation: eqPulse 0.8s ease-in-out infinite alternate;
+}
+
+.equalizer-bars span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
+.equalizer-bars span:nth-child(2) { height: 14px; animation-delay: 0.3s; }
+.equalizer-bars span:nth-child(3) { height: 10px; animation-delay: 0.2s; }
+.equalizer-bars span:nth-child(4) { height: 16px; animation-delay: 0.4s; }
+
+@keyframes eqPulse {
+    0% { height: 4px; }
+    100% { height: 16px; }
+}
+
+.fav-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1rem;
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s;
+}
+
+.fav-btn.active, .fav-btn:hover {
+    color: #ef4444;
+}
+
+/* === ФИКСИРАН ДОЛЕН ПЛЕЙЪР === */
 .player-card {
     position: fixed;
     bottom: 0;
@@ -341,143 +738,210 @@ body.light-theme {
     backdrop-filter: var(--glass-blur);
     -webkit-backdrop-filter: var(--glass-blur);
     border-top: 1px solid var(--border);
-    border-radius: 20px 20px 0 0;
-    padding: 12px 24px;
+    padding: 10px 24px;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 20px;
+    gap: 18px;
     z-index: 100;
-    box-shadow: 0 -10px 30px rgba(0,0,0,0.5);
+    box-shadow: 0 -8px 25px rgba(0,0,0,0.45);
 }
 
-/* 1. Лява част: Станция, лого и име (кратко и чисто) */
 .now-playing-info {
     display: flex;
     align-items: center;
     gap: 12px;
-    min-width: 200px;
-    max-width: 260px;
+    min-width: 220px;
+    max-width: 290px;
 }
 
 .now-playing-info img {
-    width: 48px;
-    height: 48px;
-    min-width: 48px;
-    min-height: 48px;
+    width: 44px;
+    height: 44px;
     border-radius: 10px;
-    object-fit: cover;
-    background-color: #000;
-    border: 1px solid var(--border);
+    object-fit: contain;
+    background-color: transparent;
+    flex-shrink: 0;
+}
+
+.now-playing-meta {
+    min-width: 0;
+    flex: 1;
 }
 
 .now-playing-info h2 {
-    font-size: 0.95rem;
+    font-size: 0.92rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
 .now-playing-info p {
-    font-size: 0.75rem;
+    font-size: 0.74rem;
     color: var(--text-muted);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
 
-/* Скриваме досадното поле за песен тук или го правим елегантно ако има нужда */
 .now-playing-song {
-    display: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.7rem;
+    color: var(--accent);
+    margin-top: 2px;
 }
 
-/* Малкият визуализатор в долната лента се скрива за баланс, остава този на цял екран */
-.visualizer-wrapper {
-    display: none;
+.now-playing-song span {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
-/* 2. Централна част: Бутон за пускане, време и слайдер */
+.mini-refresh-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 0.7rem;
+}
+
 .custom-player {
     display: flex;
     align-items: center;
-    gap: 12px;
-    flex: 1;
-    max-width: 450px;
-    background: rgba(15, 23, 42, 0.3);
-    padding: 6px 12px;
-    border-radius: 10px;
+    gap: 14px;
+    background: rgba(255, 255, 255, 0.03);
+    padding: 6px 16px;
+    border-radius: 30px;
     border: 1px solid var(--border);
+}
+
+.nav-player-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    font-size: 0.95rem;
+    cursor: pointer;
+    padding: 6px;
+    transition: color 0.2s;
+}
+
+.nav-player-btn:hover {
+    color: var(--accent);
 }
 
 .player-btn {
     background-color: var(--accent);
     color: #0f172a;
     border: none;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.9rem;
+    font-size: 0.95rem;
     flex-shrink: 0;
-    box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    transition: transform 0.15s;
 }
 
 .player-btn:hover {
     background-color: var(--accent-hover);
+    transform: scale(1.05);
 }
 
-.time-display {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-}
-
-.seek-slider {
-    flex: 1;
-    accent-color: var(--accent);
-    cursor: pointer;
-}
-
-/* 3. Дясна част: Еквалайзер, Звук и Сън таймер (Глезотиите) */
-.eq-controls {
+.live-status {
     display: flex;
     align-items: center;
-    gap: 10px;
-    font-size: 0.7rem;
+    gap: 6px;
+    font-size: 0.75rem;
     color: var(--text-muted);
-    background: rgba(15, 23, 42, 0.3);
-    padding: 6px 12px;
-    border-radius: 10px;
-    border: 1px solid var(--border);
+    min-width: 52px;
 }
 
-.eq-controls input[type="range"] {
-    width: 50px;
-    accent-color: var(--accent);
-    cursor: pointer;
+.live-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #64748b;
+}
+
+.live-dot.active {
+    background-color: #22c55e;
+    box-shadow: 0 0 8px #22c55e;
 }
 
 .volume-container {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    padding-left: 8px;
+    border-left: 1px solid var(--border);
 }
 
 .volume-slider {
-    width: 70px;
+    width: 75px;
     accent-color: var(--accent);
     cursor: pointer;
 }
 
+.eq-controls {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.eq-controls input[type="range"] {
+    width: 48px;
+    accent-color: var(--accent);
+    cursor: pointer;
+}
+
+.sleep-timer-dropdown-container {
+    position: relative;
+    display: inline-block;
+}
+
+.sleep-timer-menu {
+    display: none;
+    position: absolute;
+    bottom: 120%;
+    right: 0;
+    background: var(--player-bg);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px;
+    flex-direction: column;
+    gap: 6px;
+    width: 130px;
+    z-index: 120;
+    backdrop-filter: var(--glass-blur);
+}
+
+.timer-opt {
+    background: transparent;
+    border: none;
+    color: var(--text-main);
+    text-align: left;
+    cursor: pointer;
+    font-size: 0.8rem;
+    padding: 3px 0;
+}
+
+.timer-opt:hover {
+    color: var(--accent);
+}
+
 .share-btn {
     background: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     color: var(--text-main);
-    padding: 8px 12px;
+    padding: 8px 14px;
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.8rem;
@@ -497,231 +961,48 @@ body.light-theme {
     cursor: not-allowed;
 }
 
-/* Quick Picks */
-.quick-picks-wrapper h3 {
-    font-size: 0.9rem;
-    color: var(--text-muted);
-    margin-bottom: 10px;
-}
-
-.quick-picks {
-    display: flex;
-    gap: 12px;
-    overflow-x: auto;
-    padding-bottom: 5px;
-}
-
-.quick-pick-item {
-    background-color: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 8px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-    cursor: pointer;
-    width: 80px;
-    flex-shrink: 0;
-}
-
-.quick-pick-item img {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 1px solid var(--border);
-}
-
-.quick-pick-item span {
-    font-size: 0.7rem;
-    text-align: center;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    width: 100%;
-}
-
-/* Stations Grid */
-.stations-grid-wrapper {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    padding-bottom: 30px;
-}
-
-.stations-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.sort-controls {
-    display: flex;
-    gap: 8px;
-}
-
-.sort-btn {
-    background-color: var(--bg-sidebar);
-    border: 1px solid var(--border);
-    color: var(--text-muted);
-    padding: 6px 12px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-}
-
-.sort-btn.active, .sort-btn:hover {
-    background-color: var(--accent);
-    color: #0f172a;
-    border-color: var(--accent);
-    font-weight: 500;
-}
-
-#stations-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 16px;
-}
-
-.station-card {
-    background-color: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    border: 1px solid var(--border);
-    border-radius: 14px;
-    padding: 14px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    cursor: pointer;
-    position: relative;
-    transition: all 0.25s ease;
-}
-
-.station-card:hover {
-    background-color: var(--bg-card-hover);
-    border-color: var(--accent);
-    transform: translateY(-3px);
-}
-
-.station-logo {
-    width: 48px;
-    height: 48px;
-    border-radius: 10px;
-    object-fit: cover;
-    background-color: #000;
-    flex-shrink: 0;
-    border: 1px solid var(--border);
-}
-
-.station-info-text {
-    flex: 1;
-    min-width: 0;
-}
-
-.station-info-text h4 {
-    font-size: 0.9rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 2px;
-}
-
-.station-info-text .slogan {
-    font-size: 0.75rem;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-bottom: 4px;
-}
-
-.station-tags {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
-}
-
-.tag {
-    background-color: rgba(255, 255, 255, 0.05);
-    color: var(--text-muted);
-    font-size: 0.65rem;
-    padding: 2px 6px;
-    border-radius: 4px;
-    border: 1px solid var(--border);
-}
-
-.fav-btn {
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 1.1rem;
-    cursor: pointer;
-    padding: 6px;
-}
-
-.fav-btn.active, .fav-btn:hover {
-    color: #ef4444;
-}
-
-.footer {
-    display: none;
-}
-
 /* === МОБИЛНИ УСТРОЙСТВА === */
-@media (max-width: 1024px) {
+@media (max-width: 1100px) {
     .eq-controls {
-        display: none; /* Скриваме еквалайзера на по-малки екрани, за да има супер баланс */
+        display: none;
     }
 }
 
 @media (max-width: 768px) {
+    body {
+        height: auto;
+        overflow: auto;
+    }
+
     .main-container {
         flex-direction: column;
+        overflow: visible;
+        padding-bottom: 130px;
     }
 
     .sidebar {
         width: 100%;
-        max-height: 160px;
+        max-height: none;
         border-right: none;
         border-bottom: 1px solid var(--border);
     }
 
     .content-area {
-        padding: 12px;
-        padding-bottom: 130px;
+        padding: 16px;
+        overflow: visible;
     }
 
     .player-card {
-        flex-direction: column;
-        padding: 10px 15px;
-        gap: 8px;
-        border-radius: 20px 20px 0 0;
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        gap: 10px;
     }
 
     .now-playing-info {
-        width: 100%;
-        max-width: 100%;
-        justify-content: flex-start;
-    }
-
-    .custom-player {
-        width: 100%;
-        max-width: 100%;
+        max-width: 60%;
     }
 
     .volume-container {
         display: none;
-    }
-
-    .share-btn {
-        width: 100%;
-        justify-content: center;
     }
 }

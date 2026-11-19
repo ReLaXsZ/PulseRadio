@@ -10,7 +10,7 @@
   {
     "stationuuid": "custom-fresh-1",
     "name": "Fresh!",
-    "url_resolved": "http://193.108.24.21:8000/fresh",
+    "url_resolved": "https://stream.radiorefresh.bg/fresh.aac",
     "country": "Bulgaria",
     "tags": "pop,hits",
     "favicon": "https://radiorefresh.bg/favicon.ico"
