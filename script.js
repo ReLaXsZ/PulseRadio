@@ -51,20 +51,46 @@ let currentFilterQuery = 'all';
 let selectedCountry = null;
 let searchRequestId = 0;
 
+const failedStationKeys = new Set();
 const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
 
 function t(key) {
     return getTranslation(languageSelect.value, key);
 }
 
+function getStationKey(station) {
+    if (!station) return '';
+    return station.stationuuid || station.url_resolved || '';
+}
+
+function isFailedInSession(station) {
+    const key = getStationKey(station);
+    return key ? failedStationKeys.has(key) : false;
+}
+
+function markStationFailed(station) {
+    const key = getStationKey(station);
+    if (key) {
+        failedStationKeys.add(key);
+    }
+}
+
 function isSafeStreamUrl(url) {
     if (!url || typeof url !== 'string') return false;
     try {
         const parsed = new URL(url.trim());
-        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+        return parsed.protocol === 'https:';
     } catch {
         return false;
     }
+}
+
+function isPlayableStation(station) {
+    return Boolean(
+        station &&
+        isSafeStreamUrl(station.url_resolved) &&
+        !isFailedInSession(station)
+    );
 }
 
 function renderStatusMessage(container, text, isError = false) {
@@ -122,6 +148,7 @@ function setLanguage(langCode) {
     applyTranslationsToDom(langCode);
     updateCountriesVisibility();
     renderFavorites();
+    renderRecentStations();
 }
 
 langOptions.forEach(opt => {
@@ -142,9 +169,21 @@ function cleanString(str) {
 function formatMetaLine(station) {
     const country = station.country ? cleanString(station.country) : 'Global';
     const tagsRaw = station.tags ? cleanString(station.tags) : '';
-    const firstTag = tagsRaw.split(',').map(tag => tag.trim()).find(tag => tag.length > 0);
-    const formattedTag = firstTag ? (firstTag.charAt(0).toUpperCase() + firstTag.slice(1)) : 'Radio';
-    return `${formattedTag} • ${country}`;
+    const tags = tagsRaw
+        .split(',')
+        .map(tag => tag.trim())
+        .filter(tag => tag.length > 0)
+        .slice(0, 2)
+        .map(tag => tag.charAt(0).toUpperCase() + tag.slice(1));
+
+    const genrePart = tags.length > 0 ? tags.join(' / ') : 'Radio';
+    const codec = station.codec ? String(station.codec).toUpperCase() : '';
+    const bitrate = Number(station.bitrate) > 0 ? `${station.bitrate}kbps` : '';
+    const qualityPart = [codec, bitrate].filter(Boolean).join(' ');
+
+    return qualityPart
+        ? `${genrePart} • ${country} • ${qualityPart}`
+        : `${genrePart} • ${country}`;
 }
 
 function copyStationShareLink(station, triggerEl) {
@@ -202,23 +241,25 @@ function renderFavorites() {
         favoritesList.appendChild(p);
         return;
     }
+    const fragment = document.createDocumentFragment();
     favs.forEach(station => {
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'fav-sidebar-item';
-        
+
         const img = document.createElement('img');
         img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
         img.alt = '';
+        img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
 
         const info = document.createElement('div');
         info.className = 'fav-sidebar-info';
-        
+
         const nameSpan = document.createElement('span');
         nameSpan.className = 'fav-name';
         nameSpan.textContent = cleanString(station.name);
-        
+
         const metaSpan = document.createElement('span');
         metaSpan.className = 'fav-meta';
         metaSpan.textContent = formatMetaLine(station);
@@ -229,8 +270,9 @@ function renderFavorites() {
         btn.appendChild(info);
 
         btn.addEventListener('click', () => playStation(station));
-        favoritesList.appendChild(btn);
+        fragment.appendChild(btn);
     });
+    favoritesList.appendChild(fragment);
 }
 
 // ======================== НАСКОРО СЛУШАНИ ========================
@@ -251,6 +293,8 @@ function addRecentStation(station) {
         url_resolved: station.url_resolved,
         country: station.country,
         tags: station.tags,
+        codec: station.codec,
+        bitrate: station.bitrate,
         favicon: station.favicon
     });
     if (recent.length > 5) recent = recent.slice(0, 5);
@@ -259,7 +303,7 @@ function addRecentStation(station) {
 }
 
 function renderRecentStations() {
-    const recent = getRecentStations();
+    const recent = getRecentStations().filter(s => isPlayableStation(s));
     if (recent.length === 0) {
         recentlyPlayedWrapper.style.display = 'none';
         return;
@@ -267,6 +311,7 @@ function renderRecentStations() {
     recentlyPlayedWrapper.style.display = 'block';
     recentlyPlayedContainer.innerHTML = '';
 
+    const fragment = document.createDocumentFragment();
     recent.forEach(station => {
         const card = document.createElement('div');
         card.className = 'recent-card';
@@ -274,6 +319,7 @@ function renderRecentStations() {
         const img = document.createElement('img');
         img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
         img.alt = '';
+        img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
 
         const info = document.createElement('div');
@@ -291,8 +337,9 @@ function renderRecentStations() {
         card.appendChild(info);
 
         card.addEventListener('click', () => playStation(station));
-        recentlyPlayedContainer.appendChild(card);
+        fragment.appendChild(card);
     });
+    recentlyPlayedContainer.appendChild(fragment);
 }
 
 if (clearRecentBtn) {
@@ -305,11 +352,11 @@ if (clearRecentBtn) {
 // ======================== БЪРЗ ИЗБОР ========================
 async function loadTopStations(type = 'global', query = '') {
     renderStatusMessage(quickPicksContainer, t('loadingTop'));
-    let url = `${API_BASE}/topclick/8`;
+    let url = `${API_BASE}/topclick/12`;
     if (type === 'country' && query) {
-        url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
+        url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=12&order=clickcount&reverse=true`;
     } else if (type === 'genre' && query !== 'all') {
-        url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=8&order=clickcount&reverse=true`;
+        url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=12&order=clickcount&reverse=true`;
     }
     try {
         const topStations = await fetchStations(url);
@@ -322,21 +369,24 @@ async function loadTopStations(type = 'global', query = '') {
 function renderQuickPicks(stations) {
     quickPicksContainer.innerHTML = '';
     if (!stations || stations.length === 0) return;
-    stations.forEach(station => {
-        if (!isSafeStreamUrl(station.url_resolved)) return;
+    const playable = stations.filter(s => isPlayableStation(s)).slice(0, 8);
+    const fragment = document.createDocumentFragment();
+    playable.forEach(station => {
         const div = document.createElement('div');
         div.className = 'quick-pick-item';
         const img = document.createElement('img');
         img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
         img.alt = '';
+        img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
         const span = document.createElement('span');
         span.textContent = cleanString(station.name);
         div.appendChild(img);
         div.appendChild(span);
         div.addEventListener('click', () => playStation(station));
-        quickPicksContainer.appendChild(div);
+        fragment.appendChild(div);
     });
+    quickPicksContainer.appendChild(fragment);
 }
 
 // ======================== ТЕМА ========================
@@ -589,13 +639,14 @@ viewListBtn.addEventListener('click', () => {
 function displayStations(stations) {
     stationsContainer.innerHTML = '';
     displayedStations = (Array.isArray(stations) ? stations : [])
-        .filter(s => isSafeStreamUrl(s.url_resolved));
+        .filter(s => isPlayableStation(s));
 
     if (displayedStations.length === 0) {
         renderStatusMessage(stationsContainer, t('noStations'));
         return;
     }
 
+    const fragment = document.createDocumentFragment();
     displayedStations.forEach(station => {
         const isCurrentPlaying = currentStation && currentStation.stationuuid === station.stationuuid && !audioStream.paused;
 
@@ -616,10 +667,10 @@ function displayStations(stations) {
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'station-info-text';
-        
+
         const h4 = document.createElement('h4');
         h4.textContent = cleanString(station.name);
-        
+
         const metaP = document.createElement('p');
         metaP.className = 'station-meta-line';
         metaP.textContent = formatMetaLine(station);
@@ -671,8 +722,9 @@ function displayStations(stations) {
         card.appendChild(actionsDiv);
 
         card.addEventListener('click', () => playStation(station));
-        stationsContainer.appendChild(card);
+        fragment.appendChild(card);
     });
+    stationsContainer.appendChild(fragment);
 }
 
 function updateActiveCardHighlight() {
@@ -688,18 +740,76 @@ function updateActiveCardHighlight() {
     });
 }
 
+// ======================== МЕТАДАННИ ЗА ТЕКУЩА ПЕСЕН ========================
+function clearSongInfo() {
+    if (songInfoText) {
+        songInfoText.textContent = '';
+    }
+    if (songInfoContainer) {
+        songInfoContainer.style.display = 'none';
+    }
+}
+
+function showSongInfo(title) {
+    const cleaned = cleanString(title);
+    if (!cleaned || cleaned === 'Unknown Station') {
+        clearSongInfo();
+        return;
+    }
+    if (songInfoText) {
+        songInfoText.textContent = cleaned;
+    }
+    if (songInfoContainer) {
+        songInfoContainer.style.display = 'flex';
+    }
+}
+
 // ======================== ПУСКАНЕ НА СТАНЦИЯ ========================
-async function playStation(station) {
-    if (!station || !isSafeStreamUrl(station.url_resolved)) return;
+async function playStation(station, retryCount = 0) {
+    if (!isPlayableStation(station)) {
+        if (retryCount < 5) {
+            const fallbackList = (displayedStations.length > 0 ? displayedStations : allStations)
+                .filter(s => isPlayableStation(s));
+            const nextCandidate = fallbackList[0];
+            if (nextCandidate) {
+                return playStation(nextCandidate, retryCount + 1);
+            }
+        }
+        return;
+    }
+
     currentStation = station;
     audioStream.src = station.url_resolved;
+    clearSongInfo();
 
     audioStream.onerror = () => {
+        markStationFailed(station);
         setVisualizerPlayingState(false);
         liveDot.classList.remove('active');
-        songInfoContainer.style.display = 'flex';
-        songInfoText.textContent = `⚠️ ${t('streamUnavailable')}`;
+
+        const pool = displayedStations.length > 0 ? displayedStations : allStations;
+        const currentIdx = pool.findIndex(s => getStationKey(s) === getStationKey(station));
+        let nextStation = null;
+
+        if (pool.length > 0) {
+            for (let offset = 1; offset <= pool.length; offset++) {
+                const candidate = pool[(currentIdx + offset + pool.length) % pool.length];
+                if (candidate && getStationKey(candidate) !== getStationKey(station) && isPlayableStation(candidate)) {
+                    nextStation = candidate;
+                    break;
+                }
+            }
+        }
+
+        if (nextStation && retryCount < 5) {
+            clearSongInfo();
+            playStation(nextStation, retryCount + 1);
+            return;
+        }
+
+        clearSongInfo();
         stationName.textContent = `${cleanString(station.name)} ${t('offlineSuffix')}`;
+        displayStations(displayedStations);
         updateActiveCardHighlight();
     };
 
@@ -707,8 +817,7 @@ async function playStation(station) {
         await audioStream.play();
     } catch {
         setVisualizerPlayingState(false);
-        songInfoContainer.style.display = 'flex';
-        songInfoText.textContent = `⚠️ ${t('pressPlayToStart')}`;
+        clearSongInfo();
         return;
     }
 
@@ -722,7 +831,6 @@ async function playStation(station) {
     addRecentStation(station);
     updateActiveCardHighlight();
 
-    songInfoContainer.style.display = 'flex';
     checkCurrentSong(station);
 
     initAudioGraph(audioStream, visualizerCanvas);
@@ -737,43 +845,70 @@ refreshSongBtn.addEventListener('click', () => {
 });
 
 async function checkCurrentSong(station) {
-    songInfoText.textContent = t('songLoading');
+    if (!station || !station.url_resolved) {
+        clearSongInfo();
+        return;
+    }
+
+    clearSongInfo();
+
     try {
         const urlObj = new URL(station.url_resolved);
-        const statusUrl = `${urlObj.protocol}//${urlObj.host}/status-json.xsl`;
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 3000);
-        
-        const response = await fetch(statusUrl, { signal: controller.signal });
-        clearTimeout(timeoutId);
-        if (!response.ok) throw new Error('No status');
-        
-        const data = await response.json();
-        let title = '';
-        if (data.icestats && data.icestats.source) {
-            const sources = Array.isArray(data.icestats.source) ? data.icestats.source : [data.icestats.source];
-            const currentSource = sources.find(s => s.listenurl && s.listenurl.includes(urlObj.pathname)) || sources[0];
-            title = currentSource.title || currentSource.artist_t || currentSource.song || '';
+        const statusEndpoints = [
+            `${urlObj.protocol}//${urlObj.host}/status-json.xsl`,
+            `${urlObj.protocol}//${urlObj.host}/stats?json=1`
+        ];
+
+        for (const statusUrl of statusEndpoints) {
+            try {
+                const controller = new AbortController();
+                const timeoutId = setTimeout(() => controller.abort(), 2800);
+                const response = await fetch(statusUrl, { signal: controller.signal });
+                clearTimeout(timeoutId);
+                if (!response.ok) continue;
+
+                const data = await response.json();
+                if (data.icestats && data.icestats.source) {
+                    const sources = Array.isArray(data.icestats.source) ? data.icestats.source : [data.icestats.source];
+                    const currentSource = sources.find(s => s.listenurl && s.listenurl.includes(urlObj.pathname)) || sources[0];
+                    const title = currentSource?.title || currentSource?.artist_t || currentSource?.song || '';
+                    if (title && cleanString(title) !== 'Unknown Station') {
+                        showSongInfo(title);
+                        return;
+                    }
+                }
+
+                const shoutTitle = data.songtitle || data.title || data.streamtitle;
+                if (shoutTitle && cleanString(shoutTitle) !== 'Unknown Station') {
+                    showSongInfo(shoutTitle);
+                    return;
+                }
+            } catch {
+                // Пробваме следващия endpoint
+            }
         }
-        songInfoText.textContent = title ? title : t('songError');
+
+        clearSongInfo();
     } catch {
-        songInfoText.textContent = t('songError');
+        clearSongInfo();
     }
 }
 
 // Предишна / Следваща станция
 prevStationBtn.addEventListener('click', () => {
-    if (displayedStations.length === 0) return;
-    const idx = currentStation ? displayedStations.findIndex(s => s.stationuuid === currentStation.stationuuid) : 0;
-    const prevIdx = (idx - 1 + displayedStations.length) % displayedStations.length;
-    playStation(displayedStations[prevIdx]);
+    const playable = displayedStations.filter(s => isPlayableStation(s));
+    if (playable.length === 0) return;
+    const idx = currentStation ? playable.findIndex(s => getStationKey(s) === getStationKey(currentStation)) : 0;
+    const prevIdx = (idx - 1 + playable.length) % playable.length;
+    playStation(playable[prevIdx]);
 });
 
 nextStationBtn.addEventListener('click', () => {
-    if (displayedStations.length === 0) return;
-    const idx = currentStation ? displayedStations.findIndex(s => s.stationuuid === currentStation.stationuuid) : -1;
-    const nextIdx = (idx + 1) % displayedStations.length;
-    playStation(displayedStations[nextIdx]);
+    const playable = displayedStations.filter(s => isPlayableStation(s));
+    if (playable.length === 0) return;
+    const idx = currentStation ? playable.findIndex(s => getStationKey(s) === getStationKey(currentStation)) : -1;
+    const nextIdx = (idx + 1) % playable.length;
+    playStation(playable[nextIdx]);
 });
 
 shareBtn.addEventListener('click', () => {
@@ -796,7 +931,7 @@ allCategoryButtons.forEach(btn => {
         const genre = btn.getAttribute('data-genre');
         const country = btn.getAttribute('data-country');
         const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
-        
+
         if (genre) {
             loadStations('genre', genre, activeSort);
             loadTopStations('genre', genre);
@@ -809,9 +944,10 @@ allCategoryButtons.forEach(btn => {
 });
 
 playRandomBtn.addEventListener('click', () => {
-    if (allStations.length > 0) {
-        const randomIndex = Math.floor(Math.random() * allStations.length);
-        playStation(allStations[randomIndex]);
+    const playable = allStations.filter(s => isPlayableStation(s));
+    if (playable.length > 0) {
+        const randomIndex = Math.floor(Math.random() * playable.length);
+        playStation(playable[randomIndex]);
     }
 });
 
@@ -821,7 +957,7 @@ playRandomGlobalBtn.addEventListener('click', async () => {
     playRandomGlobalBtn.querySelector('span').textContent = t('searching');
     try {
         const stations = await fetchStations(`${API_BASE}/topclick/100`);
-        const validStations = (Array.isArray(stations) ? stations : []).filter(s => isSafeStreamUrl(s.url_resolved));
+        const validStations = (Array.isArray(stations) ? stations : []).filter(s => isPlayableStation(s));
         if (validStations.length > 0) {
             const randomIndex = Math.floor(Math.random() * validStations.length);
             playStation(validStations[randomIndex]);
@@ -939,7 +1075,7 @@ if (sleepTimerBtn) {
 
 function setSleepTimer(mins) {
     if (sleepTimerInterval) clearInterval(sleepTimerInterval);
-    
+
     if (mins === 0) {
         timerCountdown.style.display = 'none';
         sleepTimerBtn.style.color = 'inherit';
@@ -948,14 +1084,14 @@ function setSleepTimer(mins) {
 
     sleepTimerBtn.style.color = 'var(--accent)';
     timerCountdown.style.display = 'block';
-    
+
     let timeLeft = mins * 60;
-    
+
     sleepTimerInterval = setInterval(() => {
         const m = Math.floor(timeLeft / 60);
         const s = timeLeft % 60;
         timerCountdown.textContent = `${t('remainingPrefix')} ${m}:${s < 10 ? '0' : ''}${s}`;
-        
+
         if (timeLeft <= 0) {
             clearInterval(sleepTimerInterval);
             audioStream.pause();
@@ -1003,11 +1139,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stationUuid) {
         const custom = await loadCustomStations();
         const customMatch = (Array.isArray(custom) ? custom : []).find(s => s.stationuuid === stationUuid);
-        if (customMatch) { playStation(customMatch); return; }
+        if (customMatch && isPlayableStation(customMatch)) { playStation(customMatch); return; }
 
         try {
             const data = await fetchStations(`${API_BASE}/byuuid/${encodeURIComponent(stationUuid)}`);
-            if (Array.isArray(data) && data.length > 0) {
+            if (Array.isArray(data) && data.length > 0 && isPlayableStation(data[0])) {
                 playStation(data[0]);
                 return;
             }

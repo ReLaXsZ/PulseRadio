@@ -8,14 +8,6 @@
     "favicon": "https://www.radio1rock.bg/favicon.ico"
   },
   {
-    "stationuuid": "custom-fresh-1",
-    "name": "Fresh!",
-    "url_resolved": "https://stream.radiorefresh.bg/fresh.aac",
-    "country": "Bulgaria",
-    "tags": "pop,hits",
-    "favicon": "https://radiorefresh.bg/favicon.ico"
-  },
-  {
     "stationuuid": "custom-energy-1",
     "name": "Energy NRJ Bulgaria",
     "url_resolved": "https://play.global.audio/nrj128",

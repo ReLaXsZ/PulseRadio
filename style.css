@@ -3,34 +3,34 @@
 
 :root {
     --bg-main: #0b0f19;
-    --bg-sidebar: rgba(15, 23, 42, 0.08);
-    --bg-card: rgba(30, 41, 59, 0.07);
-    --bg-card-hover: rgba(56, 189, 248, 0.14);
+    --bg-sidebar: rgba(15, 23, 42, 0.45);
+    --bg-card: rgba(30, 41, 59, 0.32);
+    --bg-card-hover: rgba(56, 189, 248, 0.16);
     --text-main: #f8fafc;
     --text-muted: #e2e8f0;
     --accent: #38bdf8;
     --accent-hover: #0ea5e9;
     --border: rgba(255, 255, 255, 0.22);
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.26);
-    --player-bg: rgba(11, 15, 25, 0.24);
-    --input-bg: rgba(15, 23, 42, 0.12);
+    --player-bg: rgba(11, 15, 25, 0.65);
+    --input-bg: rgba(15, 23, 42, 0.35);
     --glass-blur: blur(8px);
     --hero-bg: linear-gradient(90deg, rgba(11, 15, 25, 0.78) 0%, rgba(11, 15, 25, 0.42) 55%, rgba(11, 15, 25, 0.22) 100%), url('globe-dark.jpg');
 }
 
 body.light-theme {
     --bg-main: #f1f5f9;
-    --bg-sidebar: rgba(255, 255, 255, 0.12);
-    --bg-card: rgba(255, 255, 255, 0.10);
-    --bg-card-hover: rgba(255, 255, 255, 0.28);
+    --bg-sidebar: rgba(255, 255, 255, 0.55);
+    --bg-card: rgba(255, 255, 255, 0.45);
+    --bg-card-hover: rgba(255, 255, 255, 0.68);
     --text-main: #0f172a;
     --text-muted: #334155;
     --accent: #0284c7;
     --accent-hover: #0369a1;
     --border: rgba(255, 255, 255, 0.65);
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
-    --player-bg: rgba(255, 255, 255, 0.34);
-    --input-bg: rgba(255, 255, 255, 0.16);
+    --player-bg: rgba(255, 255, 255, 0.72);
+    --input-bg: rgba(255, 255, 255, 0.5);
     --hero-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.48) 55%, rgba(255, 255, 255, 0.25) 100%), url('globe-light.jpg');
 }
 
@@ -45,7 +45,7 @@ body {
     background-image: url('bg-dark.jpg');
     background-size: cover;
     background-position: center;
-    background-attachment: fixed;
+    background-repeat: no-repeat;
     background-color: var(--bg-main);
     color: var(--text-main);
     min-height: 100vh;
@@ -103,7 +103,7 @@ body.light-theme {
     align-items: center;
     justify-content: center;
     border-radius: 50%;
-    transition: all 0.2s;
+    transition: background-color 0.18s, color 0.18s;
 }
 
 .icon-btn:hover {
@@ -119,7 +119,6 @@ body.light-theme {
     border-radius: 20px;
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
-    backdrop-filter: var(--glass-blur);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -138,7 +137,6 @@ body.light-theme {
     padding: 6px 12px;
     border-radius: 8px;
     cursor: pointer;
-    backdrop-filter: var(--glass-blur);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -149,8 +147,8 @@ body.light-theme {
     position: absolute;
     top: 100%;
     right: 0;
-    background: rgba(11, 15, 25, 0.72);
-    backdrop-filter: blur(14px);
+    background: rgba(11, 15, 25, 0.88);
+    backdrop-filter: blur(12px);
     border: 1px solid var(--border);
     border-radius: 10px;
     box-shadow: 0 10px 25px rgba(0,0,0,0.35);
@@ -163,7 +161,7 @@ body.light-theme {
 }
 
 body.light-theme .lang-dropdown {
-    background: rgba(255, 255, 255, 0.78);
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .lang-dropdown.show {
@@ -208,6 +206,7 @@ body.light-theme .lang-dropdown {
     display: flex;
     flex-direction: column;
     gap: 18px;
+    contain: style;
 }
 
 .sidebar::-webkit-scrollbar {
@@ -237,7 +236,7 @@ body.light-theme .lang-dropdown {
     color: var(--text-main);
     font-size: 0.85rem;
     outline: none;
-    transition: border-color 0.2s;
+    transition: border-color 0.18s;
 }
 
 .search-box input:focus {
@@ -273,7 +272,7 @@ body.light-theme .lang-dropdown {
     border-radius: 8px;
     cursor: pointer;
     font-size: 0.88rem;
-    transition: all 0.2s;
+    transition: background-color 0.18s, color 0.18s;
     display: flex;
     align-items: center;
     gap: 10px;
@@ -323,7 +322,7 @@ body.light-theme .lang-dropdown {
     align-items: center;
     justify-content: center;
     gap: 7px;
-    transition: all 0.2s ease;
+    transition: background-color 0.18s, color 0.18s, border-color 0.18s;
 }
 
 .more-countries-btn:hover {
@@ -344,7 +343,7 @@ body.light-theme .lang-dropdown {
     border: none;
     color: var(--text-main);
     text-align: left;
-    transition: all 0.2s;
+    transition: background-color 0.18s;
 }
 
 .fav-sidebar-item:hover {
@@ -378,6 +377,9 @@ body.light-theme .lang-dropdown {
     display: block;
     font-size: 0.7rem;
     color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .empty-list-msg {
@@ -401,8 +403,6 @@ body.light-theme .lang-dropdown {
     background-size: cover;
     background-position: right center;
     background-repeat: no-repeat;
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
     border-radius: 16px;
@@ -442,7 +442,7 @@ body.light-theme .lang-dropdown {
     gap: 8px;
     font-size: 0.88rem;
     border: 1px solid var(--border);
-    transition: all 0.2s;
+    transition: transform 0.15s, background-color 0.18s, border-color 0.18s;
 }
 
 .hero-btn {
@@ -487,8 +487,6 @@ body.light-theme .lang-dropdown {
 
 .quick-pick-item {
     background: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
     border-radius: 14px;
@@ -500,13 +498,13 @@ body.light-theme .lang-dropdown {
     cursor: pointer;
     width: 96px;
     flex-shrink: 0;
-    transition: all 0.2s ease;
+    transition: transform 0.18s, background-color 0.18s, border-color 0.18s;
 }
 
 .quick-pick-item:hover {
     background: var(--bg-card-hover);
     border-color: var(--accent);
-    transform: translateY(-3px);
+    transform: translateY(-2px);
 }
 
 .quick-pick-item img {
@@ -548,7 +546,7 @@ body.light-theme .lang-dropdown {
     padding: 4px 10px;
     border-radius: 6px;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: color 0.18s, border-color 0.18s;
 }
 
 .clear-btn:hover {
@@ -564,8 +562,6 @@ body.light-theme .lang-dropdown {
 
 .recent-card {
     background: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
     border-radius: 12px;
@@ -574,7 +570,7 @@ body.light-theme .lang-dropdown {
     align-items: center;
     gap: 12px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: background-color 0.18s, border-color 0.18s;
 }
 
 .recent-card:hover {
@@ -650,7 +646,6 @@ body.light-theme .lang-dropdown {
 
 .sort-btn, .view-btn {
     background-color: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
     color: var(--text-muted);
@@ -661,7 +656,7 @@ body.light-theme .lang-dropdown {
     display: flex;
     align-items: center;
     gap: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.18s, color 0.18s, border-color 0.18s;
 }
 
 .sort-btn.active, .sort-btn:hover,
@@ -687,8 +682,6 @@ body.light-theme .lang-dropdown {
 
 .station-card {
     background-color: var(--bg-card);
-    backdrop-filter: var(--glass-blur);
-    -webkit-backdrop-filter: var(--glass-blur);
     border: 1px solid var(--border);
     box-shadow: var(--glass-highlight);
     border-radius: 14px;
@@ -698,7 +691,8 @@ body.light-theme .lang-dropdown {
     gap: 14px;
     cursor: pointer;
     position: relative;
-    transition: all 0.25s ease;
+    transition: transform 0.18s, background-color 0.18s, border-color 0.18s;
+    contain: style;
 }
 
 .station-card:hover {
@@ -709,8 +703,8 @@ body.light-theme .lang-dropdown {
 
 .station-card.playing {
     border-color: var(--accent);
-    background: linear-gradient(135deg, rgba(56, 189, 248, 0.16), rgba(168, 85, 247, 0.08));
-    box-shadow: 0 0 22px rgba(56, 189, 248, 0.22), var(--glass-highlight);
+    background: linear-gradient(135deg, rgba(56, 189, 248, 0.18), rgba(168, 85, 247, 0.1));
+    box-shadow: 0 0 18px rgba(56, 189, 248, 0.2), var(--glass-highlight);
 }
 
 .station-logo {
@@ -761,7 +755,7 @@ body.light-theme .lang-dropdown {
     justify-content: center;
     color: var(--text-main);
     font-size: 0.85rem;
-    transition: all 0.2s;
+    transition: color 0.18s;
 }
 
 .station-card:hover .play-btn {
@@ -783,6 +777,7 @@ body.light-theme .lang-dropdown {
     background-color: var(--accent);
     border-radius: 2px;
     animation: eqPulse 0.8s ease-in-out infinite alternate;
+    will-change: height;
 }
 
 .equalizer-bars span:nth-child(1) { height: 6px; animation-delay: 0.1s; }
@@ -803,7 +798,7 @@ body.light-theme .lang-dropdown {
     cursor: pointer;
     padding: 6px;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: color 0.18s, background-color 0.18s;
 }
 
 .card-share-btn:hover {
@@ -822,7 +817,7 @@ body.light-theme .lang-dropdown {
     font-size: 1rem;
     cursor: pointer;
     padding: 6px;
-    transition: color 0.2s;
+    transition: color 0.18s;
 }
 
 .fav-btn.active, .fav-btn:hover {
@@ -834,6 +829,7 @@ body.light-theme .lang-dropdown {
     position: fixed;
     bottom: 0;
     left: 0;
+    right: 0;
     width: 100%;
     background-color: var(--player-bg);
     backdrop-filter: var(--glass-blur);
@@ -845,7 +841,7 @@ body.light-theme .lang-dropdown {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    z-index: 100;
+    z-index: 999;
 }
 
 .now-playing-info {
@@ -853,7 +849,7 @@ body.light-theme .lang-dropdown {
     align-items: center;
     gap: 12px;
     min-width: 200px;
-    max-width: 260px;
+    max-width: 280px;
 }
 
 .now-playing-info img {
@@ -946,7 +942,7 @@ body.light-theme .lang-dropdown {
     font-size: 0.95rem;
     cursor: pointer;
     padding: 6px;
-    transition: color 0.2s;
+    transition: color 0.18s;
 }
 
 .nav-player-btn:hover {
@@ -967,7 +963,7 @@ body.light-theme .lang-dropdown {
     font-size: 0.95rem;
     flex-shrink: 0;
     box-shadow: 0 0 12px rgba(56, 189, 248, 0.45);
-    transition: transform 0.15s;
+    transition: transform 0.15s, background-color 0.18s;
 }
 
 .player-btn:hover {
@@ -1034,7 +1030,7 @@ body.light-theme .lang-dropdown {
     position: absolute;
     bottom: 120%;
     right: 0;
-    background: rgba(11, 15, 25, 0.78);
+    background: rgba(11, 15, 25, 0.9);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 10px;
@@ -1042,11 +1038,11 @@ body.light-theme .lang-dropdown {
     gap: 6px;
     width: 130px;
     z-index: 120;
-    backdrop-filter: blur(14px);
+    backdrop-filter: blur(12px);
 }
 
 body.light-theme .sleep-timer-menu {
-    background: rgba(255, 255, 255, 0.82);
+    background: rgba(255, 255, 255, 0.92);
 }
 
 .timer-opt {
