@@ -93,7 +93,25 @@ function savePersistedFailedStations(mapObj) {
 }
 
 const failedStationsMap = loadPersistedFailedStations();
-const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
+const DEFAULT_ICON = './favicon-192x192.png';
+const BLOCKED_ICON_HOSTS = ['pozdravite.net'];
+
+function getSafeIconUrl(url) {
+    if (!url || typeof url !== 'string') return DEFAULT_ICON;
+    const trimmed = url.trim();
+    if (trimmed.includes('placeholder')) return DEFAULT_ICON;
+    if (!isSafeStreamUrl(trimmed)) return DEFAULT_ICON;
+    try {
+        const parsed = new URL(trimmed);
+        const host = parsed.hostname.toLowerCase();
+        const isBlocked = BLOCKED_ICON_HOSTS.some(
+            (blocked) => host === blocked || host.endsWith(`.${blocked}`)
+        );
+        return isBlocked ? DEFAULT_ICON : parsed.toString();
+    } catch {
+        return DEFAULT_ICON;
+    }
+}
 
 function t(key) {
     return getTranslation(languageSelect.value, key);
@@ -246,7 +264,7 @@ function cleanString(str) {
     if (!str) return '';
     let text = str.toString().trim();
     text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-    text = text.replace(/[\u0000-\u001F\u007F-\u009F]/g, "").trim();
+    text = text.replace(/[\u0000-\u{001F}\u007F-\u{009F}]/g, "").trim();
     return text || 'Unknown Station';
 }
 
@@ -332,7 +350,7 @@ function renderFavorites() {
         btn.className = 'fav-sidebar-item';
 
         const img = document.createElement('img');
-        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
@@ -401,7 +419,7 @@ function renderRecentStations() {
         card.className = 'recent-card';
 
         const img = document.createElement('img');
-        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
@@ -459,7 +477,7 @@ function renderQuickPicks(stations) {
         const div = document.createElement('div');
         div.className = 'quick-pick-item';
         const img = document.createElement('img');
-        img.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
@@ -739,12 +757,9 @@ function displayStations(stations) {
         card.dataset.uuid = station.stationuuid;
         if (isCurrentPlaying) card.classList.add('playing');
 
-        let favicon = station.favicon;
-        if (!isSafeStreamUrl(favicon) || favicon.includes('placeholder')) favicon = DEFAULT_ICON;
-
         const img = document.createElement('img');
         img.className = 'station-logo';
-        img.src = favicon;
+        img.src = getSafeIconUrl(station.favicon);
         img.alt = 'Logo';
         img.loading = 'lazy';
         img.onerror = () => { img.src = DEFAULT_ICON; };
@@ -966,7 +981,7 @@ async function playStation(station, retryCount = 0) {
     const name = cleanString(station.name);
     stationName.textContent = name;
     stationDetails.textContent = formatMetaLine(station);
-    stationIcon.src = isSafeStreamUrl(station.favicon) ? station.favicon : DEFAULT_ICON;
+    stationIcon.src = getSafeIconUrl(station.favicon);
     stationIcon.onerror = () => { stationIcon.src = DEFAULT_ICON; };
     shareBtn.disabled = false;
 
