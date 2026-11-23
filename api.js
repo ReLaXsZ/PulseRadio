@@ -7,7 +7,7 @@ const API_MIRRORS = [
 const API_BASE = API_MIRRORS[0];
 let customStationsCache = null;
 
-async function fetchWithTimeout(url, timeoutMs = 6000) {
+async function fetchWithTimeout(url, timeoutMs = 12000) {
     const controller = new AbortController();
     const timerId = setTimeout(() => controller.abort(), timeoutMs);
     try {
@@ -15,8 +15,7 @@ async function fetchWithTimeout(url, timeoutMs = 6000) {
         if (!res.ok) {
             throw new Error(`HTTP ${res.status}`);
         }
-        const data = await res.json();
-        return data;
+        return await res.json();
     } finally {
         clearTimeout(timerId);
     }
@@ -46,10 +45,25 @@ export async function fetchStations(url) {
     throw lastError || new Error('All Radio Browser mirrors failed');
 }
 
+export async function registerStationClick(stationuuid) {
+    if (!stationuuid) return;
+    for (const mirror of API_MIRRORS) {
+        try {
+            const baseUrl = mirror.replace(/\/json\/stations\/?$/, '');
+            await fetch(`${baseUrl}/json/url/${encodeURIComponent(stationuuid)}`, {
+                cache: 'no-store'
+            });
+            return;
+        } catch {
+            // Пробваме следващия сървър при грешка
+        }
+    }
+}
+
 export async function loadCustomStations() {
     if (customStationsCache) return customStationsCache;
     try {
-        const data = await fetchWithTimeout('custom_stations.json', 4000);
+        const data = await fetchWithTimeout('custom_stations.json', 6000);
         customStationsCache = Array.isArray(data) ? data : [];
         return customStationsCache;
     } catch (e) {

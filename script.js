@@ -1,4 +1,4 @@
-import { API_BASE, loadCustomStations, fetchStations } from './api.js';
+import { API_BASE, loadCustomStations, fetchStations, registerStationClick } from './api.js';
 import {
     initAudioGraph,
     audioContext,
@@ -51,7 +51,48 @@ let currentFilterQuery = 'all';
 let selectedCountry = null;
 let searchRequestId = 0;
 
-const failedStationKeys = new Set();
+const FAILED_STATIONS_STORAGE_KEY = 'radio_failed_stations_v2';
+const FAILED_STATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 часа
+const STREAM_START_TIMEOUT_MS = 8000; // 8 секунди за старт на потока
+const STREAM_STALL_TIMEOUT_MS = 10000; // 10 секунди при застой по време на свирене
+
+let playbackWatchdogTimer = null;
+let stallWatchdogTimer = null;
+let statusRestoreTimer = null;
+
+function loadPersistedFailedStations() {
+    const now = Date.now();
+    const map = new Map();
+    try {
+        const raw = localStorage.getItem(FAILED_STATIONS_STORAGE_KEY);
+        const parsed = JSON.parse(raw || '[]');
+        if (Array.isArray(parsed)) {
+            parsed.forEach((item) => {
+                if (Array.isArray(item) && item.length === 2) {
+                    const [key, expiresAt] = item;
+                    if (typeof key === 'string' && typeof expiresAt === 'number' && expiresAt > now) {
+                        map.set(key, expiresAt);
+                    }
+                }
+            });
+        }
+    } catch {
+        // Игнорираме грешки при четене от localStorage
+    }
+    savePersistedFailedStations(map);
+    return map;
+}
+
+function savePersistedFailedStations(mapObj) {
+    try {
+        const entries = Array.from(mapObj.entries()).slice(-300);
+        localStorage.setItem(FAILED_STATIONS_STORAGE_KEY, JSON.stringify(entries));
+    } catch {
+        // Игнорираме грешки при запис в localStorage
+    }
+}
+
+const failedStationsMap = loadPersistedFailedStations();
 const DEFAULT_ICON = 'https://cdn-icons-png.flaticon.com/512/2950/2950683.png';
 
 function t(key) {
@@ -65,14 +106,57 @@ function getStationKey(station) {
 
 function isFailedInSession(station) {
     const key = getStationKey(station);
-    return key ? failedStationKeys.has(key) : false;
+    if (!key) return false;
+    const expiresAt = failedStationsMap.get(key);
+    if (!expiresAt) return false;
+    if (Date.now() > expiresAt) {
+        failedStationsMap.delete(key);
+        savePersistedFailedStations(failedStationsMap);
+        return false;
+    }
+    return true;
 }
 
-function markStationFailed(station) {
+function markStationFailed(station, reason = 'error') {
     const key = getStationKey(station);
     if (key) {
-        failedStationKeys.add(key);
+        failedStationsMap.set(key, Date.now() + FAILED_STATION_TTL_MS);
+        savePersistedFailedStations(failedStationsMap);
+        console.warn('Stream marked unavailable (24h TTL):', {
+            reason,
+            stationuuid: station.stationuuid || null,
+            name: station.name || '',
+            url: station.url_resolved || ''
+        });
     }
+}
+
+function clearPlaybackWatchdog() {
+    if (playbackWatchdogTimer) {
+        clearTimeout(playbackWatchdogTimer);
+        playbackWatchdogTimer = null;
+    }
+}
+
+function clearStallWatchdog() {
+    if (stallWatchdogTimer) {
+        clearTimeout(stallWatchdogTimer);
+        stallWatchdogTimer = null;
+    }
+}
+
+function showTemporaryPlayerNotice(noticeText, stationToRestore) {
+    if (statusRestoreTimer) {
+        clearTimeout(statusRestoreTimer);
+        statusRestoreTimer = null;
+    }
+    stationDetails.textContent = noticeText;
+    statusRestoreTimer = setTimeout(() => {
+        if (currentStation && stationToRestore && getStationKey(currentStation) === getStationKey(stationToRestore)) {
+            stationDetails.textContent = formatMetaLine(stationToRestore);
+        }
+        statusRestoreTimer = null;
+    }, 4500);
 }
 
 function isSafeStreamUrl(url) {
@@ -765,7 +849,49 @@ function showSongInfo(title) {
 }
 
 // ======================== ПУСКАНЕ НА СТАНЦИЯ ========================
+function advanceAfterFailure(failedStation, retryCount, reason = 'error') {
+    clearPlaybackWatchdog();
+    clearStallWatchdog();
+    markStationFailed(failedStation, reason);
+    setVisualizerPlayingState(false);
+    liveDot.classList.remove('active');
+
+    const pool = displayedStations.length > 0 ? displayedStations : allStations;
+    const currentIdx = pool.findIndex(s => getStationKey(s) === getStationKey(failedStation));
+    let nextStation = null;
+
+    if (pool.length > 0) {
+        for (let offset = 1; offset <= pool.length; offset++) {
+            const candidate = pool[(currentIdx + offset + pool.length) % pool.length];
+            if (candidate && getStationKey(candidate) !== getStationKey(failedStation) && isPlayableStation(candidate)) {
+                nextStation = candidate;
+                break;
+            }
+        }
+    }
+
+    if (nextStation && retryCount < 5) {
+        clearSongInfo();
+        const skippedLabel = cleanString(failedStation.name);
+        const nextLabel = cleanString(nextStation.name);
+        playStation(nextStation, retryCount + 1).then(() => {
+            if (currentStation && getStationKey(currentStation) === getStationKey(nextStation)) {
+                showTemporaryPlayerNotice(`Skipped: ${skippedLabel} → ${nextLabel}`, nextStation);
+            }
+        });
+        return;
+    }
+
+    clearSongInfo();
+    stationName.textContent = `${cleanString(failedStation.name)} ${t('offlineSuffix')}`;
+    displayStations(displayedStations);
+    updateActiveCardHighlight();
+}
+
 async function playStation(station, retryCount = 0) {
+    clearPlaybackWatchdog();
+    clearStallWatchdog();
+
     if (!isPlayableStation(station)) {
         if (retryCount < 5) {
             const fallbackList = (displayedStations.length > 0 ? displayedStations : allStations)
@@ -782,43 +908,59 @@ async function playStation(station, retryCount = 0) {
     audioStream.src = station.url_resolved;
     clearSongInfo();
 
-    audioStream.onerror = () => {
-        markStationFailed(station);
-        setVisualizerPlayingState(false);
-        liveDot.classList.remove('active');
+    let streamStarted = false;
 
-        const pool = displayedStations.length > 0 ? displayedStations : allStations;
-        const currentIdx = pool.findIndex(s => getStationKey(s) === getStationKey(station));
-        let nextStation = null;
-
-        if (pool.length > 0) {
-            for (let offset = 1; offset <= pool.length; offset++) {
-                const candidate = pool[(currentIdx + offset + pool.length) % pool.length];
-                if (candidate && getStationKey(candidate) !== getStationKey(station) && isPlayableStation(candidate)) {
-                    nextStation = candidate;
-                    break;
-                }
-            }
-        }
-
-        if (nextStation && retryCount < 5) {
-            clearSongInfo();
-            playStation(nextStation, retryCount + 1);
-            return;
-        }
-
-        clearSongInfo();
-        stationName.textContent = `${cleanString(station.name)} ${t('offlineSuffix')}`;
-        displayStations(displayedStations);
-        updateActiveCardHighlight();
+    const onStreamPlaying = () => {
+        streamStarted = true;
+        clearPlaybackWatchdog();
+        clearStallWatchdog();
     };
+
+    const onStreamStalled = () => {
+        if (audioStream.paused) return;
+        clearStallWatchdog();
+        stallWatchdogTimer = setTimeout(() => {
+            if (!audioStream.paused && currentStation && getStationKey(currentStation) === getStationKey(station)) {
+                audioStream.removeEventListener('playing', onStreamPlaying);
+                audioStream.removeEventListener('stalled', onStreamStalled);
+                audioStream.removeEventListener('waiting', onStreamStalled);
+                advanceAfterFailure(station, retryCount, 'stream_stalled');
+            }
+        }, STREAM_STALL_TIMEOUT_MS);
+    };
+
+    audioStream.addEventListener('playing', onStreamPlaying);
+    audioStream.addEventListener('stalled', onStreamStalled);
+    audioStream.addEventListener('waiting', onStreamStalled);
+
+    audioStream.onerror = () => {
+        audioStream.removeEventListener('playing', onStreamPlaying);
+        audioStream.removeEventListener('stalled', onStreamStalled);
+        audioStream.removeEventListener('waiting', onStreamStalled);
+        advanceAfterFailure(station, retryCount, 'audio_error');
+    };
+
+    playbackWatchdogTimer = setTimeout(() => {
+        if (!streamStarted && currentStation && getStationKey(currentStation) === getStationKey(station)) {
+            audioStream.removeEventListener('playing', onStreamPlaying);
+            audioStream.removeEventListener('stalled', onStreamStalled);
+            audioStream.removeEventListener('waiting', onStreamStalled);
+            advanceAfterFailure(station, retryCount, 'silent_or_stalled_start');
+        }
+    }, STREAM_START_TIMEOUT_MS);
 
     try {
         await audioStream.play();
     } catch {
-        setVisualizerPlayingState(false);
-        clearSongInfo();
+        audioStream.removeEventListener('playing', onStreamPlaying);
+        audioStream.removeEventListener('stalled', onStreamStalled);
+        audioStream.removeEventListener('waiting', onStreamStalled);
+        advanceAfterFailure(station, retryCount, 'play_rejected');
         return;
+    }
+
+    if (station.stationuuid) {
+        registerStationClick(station.stationuuid).catch(() => {});
     }
 
     const name = cleanString(station.name);
@@ -992,6 +1134,8 @@ playPauseBtn.addEventListener('click', async () => {
             console.warn('Playback start error:', e);
         }
     } else {
+        clearPlaybackWatchdog();
+        clearStallWatchdog();
         audioStream.pause();
     }
 });
@@ -1004,6 +1148,8 @@ audioStream.addEventListener('play', () => {
 });
 
 audioStream.addEventListener('pause', () => {
+    clearPlaybackWatchdog();
+    clearStallWatchdog();
     playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
     liveDot.classList.remove('active');
     setVisualizerPlayingState(false);
