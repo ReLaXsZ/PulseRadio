@@ -93,7 +93,7 @@ function savePersistedFailedStations(mapObj) {
 }
 
 const failedStationsMap = loadPersistedFailedStations();
-const DEFAULT_ICON = './favicon-192x192.png';
+const DEFAULT_ICON = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%2338bdf8' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%2338bdf8'/%3E%3C/svg%3E";
 const BLOCKED_ICON_HOSTS = ['pozdravite.net'];
 
 function getSafeIconUrl(url) {
@@ -264,7 +264,7 @@ function cleanString(str) {
     if (!str) return '';
     let text = str.toString().trim();
     text = text.replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F700}-\u{1F77F}\u{1F780}-\u{1F7FF}\u{1F800}-\u{1F8FF}\u{1F900}-\u{1F9FF}\u{1FA00}-\u{1FA6F}\u{1FA70}-\u{1FAFF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '');
-    text = text.replace(/[\u0000-\u{001F}\u007F-\u{009F}]/g, "").trim();
+    text = text.replace(/[\x00-\x1F\x7F]/g, '').trim();
     return text || 'Unknown Station';
 }
 
