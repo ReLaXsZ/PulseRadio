@@ -4,10 +4,63 @@ export let sourceNode = null;
 let visualizerRAF = null;
 let fsVisualizerRAF = null;
 let isPlayingForVis = false;
+let activeMiniCanvas = null;
+let activeFsCanvas = null;
+
+function drawRoundedBar(ctx, x, y, width, height, radii) {
+    if (typeof ctx.roundRect === 'function') {
+        ctx.beginPath();
+        ctx.roundRect(x, y, width, height, radii);
+        ctx.fill();
+        return;
+    }
+    ctx.fillRect(x, y, width, height);
+}
 
 export function setVisualizerPlayingState(playing) {
-    isPlayingForVis = Boolean(playing);
+    const nextState = Boolean(playing);
+    if (isPlayingForVis === nextState) return;
+    isPlayingForVis = nextState;
+
+    if (activeMiniCanvas) {
+        startVisualizer(activeMiniCanvas);
+    }
+    if (activeFsCanvas) {
+        startFullscreenVisualizer(activeFsCanvas);
+    }
 }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        if (visualizerRAF) {
+            cancelAnimationFrame(visualizerRAF);
+            visualizerRAF = null;
+        }
+        if (fsVisualizerRAF) {
+            cancelAnimationFrame(fsVisualizerRAF);
+            fsVisualizerRAF = null;
+        }
+    } else if (isPlayingForVis) {
+        if (activeMiniCanvas && !visualizerRAF) {
+            startVisualizer(activeMiniCanvas);
+        }
+        if (activeFsCanvas && !fsVisualizerRAF) {
+            startFullscreenVisualizer(activeFsCanvas);
+        }
+    }
+});
+
+let bassFilter = null;
+let midFilter = null;
+let trebleFilter = null;
+let eqControlsBound = false;
+
+export const EQ_PRESETS = {
+    flat: { bass: 0, mid: 0, treble: 0 },
+    bass: { bass: 6, mid: 0, treble: -1 },
+    rock: { bass: 4, mid: -1, treble: 4 },
+    vocal: { bass: -3, mid: 5, treble: 2 }
+};
 
 function readSavedEq() {
     try {
@@ -15,14 +68,82 @@ function readSavedEq() {
         return {
             bass: Number.isFinite(Number(parsed.bass)) ? Number(parsed.bass) : 0,
             mid: Number.isFinite(Number(parsed.mid)) ? Number(parsed.mid) : 0,
-            treble: Number.isFinite(Number(parsed.treble)) ? Number(parsed.treble) : 0
+            treble: Number.isFinite(Number(parsed.treble)) ? Number(parsed.treble) : 0,
+            preset: typeof parsed.preset === 'string' ? parsed.preset : 'flat'
         };
     } catch {
-        return { bass: 0, mid: 0, treble: 0 };
+        return { bass: 0, mid: 0, treble: 0, preset: 'flat' };
+    }
+}
+
+function applyEqValues(bassVal, midVal, trebleVal, presetName = 'custom') {
+    const bassEl = document.getElementById('eq-bass');
+    const midEl = document.getElementById('eq-mid');
+    const trebleEl = document.getElementById('eq-treble');
+    const presetEl = document.getElementById('eq-preset');
+
+    if (bassEl) bassEl.value = String(bassVal);
+    if (midEl) midEl.value = String(midVal);
+    if (trebleEl) trebleEl.value = String(trebleVal);
+    if (presetEl) presetEl.value = presetName;
+
+    if (bassFilter) bassFilter.gain.value = bassVal;
+    if (midFilter) midFilter.gain.value = midVal;
+    if (trebleFilter) trebleFilter.gain.value = trebleVal;
+
+    saveEq(presetName);
+}
+
+export function initEqControls() {
+    if (eqControlsBound) return;
+    eqControlsBound = true;
+
+    const bassEl = document.getElementById('eq-bass');
+    const midEl = document.getElementById('eq-mid');
+    const trebleEl = document.getElementById('eq-treble');
+    const presetEl = document.getElementById('eq-preset');
+
+    const saved = readSavedEq();
+    if (bassEl) bassEl.value = String(saved.bass);
+    if (midEl) midEl.value = String(saved.mid);
+    if (trebleEl) trebleEl.value = String(saved.treble);
+    if (presetEl) presetEl.value = saved.preset;
+
+    const onSliderInput = () => {
+        const b = bassEl ? +bassEl.value : 0;
+        const m = midEl ? +midEl.value : 0;
+        const t = trebleEl ? +trebleEl.value : 0;
+        if (bassFilter) bassFilter.gain.value = b;
+        if (midFilter) midFilter.gain.value = m;
+        if (trebleFilter) trebleFilter.gain.value = t;
+        if (presetEl) presetEl.value = 'custom';
+        saveEq('custom');
+    };
+
+    if (bassEl) bassEl.addEventListener('input', onSliderInput);
+    if (midEl) midEl.addEventListener('input', onSliderInput);
+    if (trebleEl) trebleEl.addEventListener('input', onSliderInput);
+
+    if (presetEl) {
+        presetEl.addEventListener('change', () => {
+            const preset = EQ_PRESETS[presetEl.value];
+            if (preset) {
+                applyEqValues(preset.bass, preset.mid, preset.treble, presetEl.value);
+            }
+        });
+    }
+
+    const resetBtn = document.getElementById('eq-reset-btn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            applyEqValues(0, 0, 0, 'flat');
+            if (presetEl) presetEl.value = 'flat';
+        });
     }
 }
 
 export function initAudioGraph(audioStream, visualizerCanvas) {
+    initEqControls();
     try {
         if (!audioContext && audioStream) {
             const AudioCtx = window.AudioContext || window.webkitAudioContext;
@@ -31,44 +152,33 @@ export function initAudioGraph(audioStream, visualizerCanvas) {
             audioContext = new AudioCtx();
             sourceNode = audioContext.createMediaElementSource(audioStream);
 
-            const bass = audioContext.createBiquadFilter();
-            bass.type = 'lowshelf';
-            bass.frequency.value = 200;
+            bassFilter = audioContext.createBiquadFilter();
+            bassFilter.type = 'lowshelf';
+            bassFilter.frequency.value = 200;
 
-            const mid = audioContext.createBiquadFilter();
-            mid.type = 'peaking';
-            mid.frequency.value = 1000;
-            mid.Q.value = 1;
+            midFilter = audioContext.createBiquadFilter();
+            midFilter.type = 'peaking';
+            midFilter.frequency.value = 1000;
+            midFilter.Q.value = 1;
 
-            const treble = audioContext.createBiquadFilter();
-            treble.type = 'highshelf';
-            treble.frequency.value = 3000;
+            trebleFilter = audioContext.createBiquadFilter();
+            trebleFilter.type = 'highshelf';
+            trebleFilter.frequency.value = 3000;
 
             const savedEq = readSavedEq();
-            bass.gain.value = savedEq.bass;
-            mid.gain.value = savedEq.mid;
-            treble.gain.value = savedEq.treble;
-
-            const bassEl = document.getElementById('eq-bass');
-            const midEl = document.getElementById('eq-mid');
-            const trebleEl = document.getElementById('eq-treble');
-            if (bassEl) bassEl.value = savedEq.bass;
-            if (midEl) midEl.value = savedEq.mid;
-            if (trebleEl) trebleEl.value = savedEq.treble;
+            bassFilter.gain.value = savedEq.bass;
+            midFilter.gain.value = savedEq.mid;
+            trebleFilter.gain.value = savedEq.treble;
 
             analyser = audioContext.createAnalyser();
             analyser.fftSize = 128;
             analyser.smoothingTimeConstant = 0.82;
 
-            sourceNode.connect(bass);
-            bass.connect(mid);
-            mid.connect(treble);
-            treble.connect(analyser);
+            sourceNode.connect(bassFilter);
+            bassFilter.connect(midFilter);
+            midFilter.connect(trebleFilter);
+            trebleFilter.connect(analyser);
             analyser.connect(audioContext.destination);
-
-            if (bassEl) bassEl.addEventListener('input', (e) => { bass.gain.value = +e.target.value; saveEq(); });
-            if (midEl) midEl.addEventListener('input', (e) => { mid.gain.value = +e.target.value; saveEq(); });
-            if (trebleEl) trebleEl.addEventListener('input', (e) => { treble.gain.value = +e.target.value; saveEq(); });
         }
 
         if (visualizerCanvas && !visualizerRAF) {
@@ -82,15 +192,17 @@ export function initAudioGraph(audioStream, visualizerCanvas) {
     }
 }
 
-function saveEq() {
+function saveEq(presetName) {
     const bassEl = document.getElementById('eq-bass');
     const midEl = document.getElementById('eq-mid');
     const trebleEl = document.getElementById('eq-treble');
+    const presetEl = document.getElementById('eq-preset');
     try {
         localStorage.setItem('radio_eq', JSON.stringify({
             bass: bassEl ? +bassEl.value : 0,
             mid: midEl ? +midEl.value : 0,
-            treble: trebleEl ? +trebleEl.value : 0
+            treble: trebleEl ? +trebleEl.value : 0,
+            preset: presetName || (presetEl ? presetEl.value : 'custom')
         }));
     } catch {
         // Игнорираме при ограничен достъп до storage
@@ -99,7 +211,11 @@ function saveEq() {
 
 export function startVisualizer(canvas) {
     if (!canvas) return;
-    if (visualizerRAF) cancelAnimationFrame(visualizerRAF);
+    activeMiniCanvas = canvas;
+    if (visualizerRAF) {
+        cancelAnimationFrame(visualizerRAF);
+        visualizerRAF = null;
+    }
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -109,7 +225,6 @@ export function startVisualizer(canvas) {
     let phase = 0;
 
     function draw() {
-        visualizerRAF = requestAnimationFrame(draw);
         phase += 0.085;
 
         let hasRealAudioData = false;
@@ -173,13 +288,17 @@ export function startVisualizer(canvas) {
                 : minHeight;
 
             const y = h - barHeight - 2;
-            ctx.beginPath();
-            ctx.roundRect(x, y, barWidth, barHeight, [2, 2, 1, 1]);
-            ctx.fill();
+            drawRoundedBar(ctx, x, y, barWidth, barHeight, [2, 2, 1, 1]);
 
             x += barWidth + gap;
         }
         ctx.restore();
+
+        if (isPlayingForVis && !document.hidden) {
+            visualizerRAF = requestAnimationFrame(draw);
+        } else {
+            visualizerRAF = null;
+        }
     }
 
     draw();
@@ -187,10 +306,14 @@ export function startVisualizer(canvas) {
 
 export function startFullscreenVisualizer(canvas) {
     if (!canvas) return;
-    if (fsVisualizerRAF) cancelAnimationFrame(fsVisualizerRAF);
+    activeFsCanvas = canvas;
+    if (fsVisualizerRAF) {
+        cancelAnimationFrame(fsVisualizerRAF);
+        fsVisualizerRAF = null;
+    }
 
-    canvas.width = Math.floor(window.innerWidth * 0.8);
-    canvas.height = Math.floor(window.innerHeight * 0.6);
+    canvas.width = Math.max(240, Math.floor(window.innerWidth * 0.8));
+    canvas.height = Math.max(160, Math.floor(window.innerHeight * 0.6));
 
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
@@ -200,7 +323,6 @@ export function startFullscreenVisualizer(canvas) {
     let phase = 0;
 
     function draw() {
-        fsVisualizerRAF = requestAnimationFrame(draw);
         phase += 0.09;
 
         let hasRealAudioData = false;
@@ -245,17 +367,22 @@ export function startFullscreenVisualizer(canvas) {
             gradient.addColorStop(1, '#c084fc');
 
             ctx.fillStyle = gradient;
-            ctx.beginPath();
-            ctx.roundRect(x, (h / 2) - (barHeight / 2), barWidth, barHeight, [6, 6, 6, 6]);
-            ctx.fill();
+            drawRoundedBar(ctx, x, (h / 2) - (barHeight / 2), barWidth, barHeight, [6, 6, 6, 6]);
 
             x += barWidth + gap;
+        }
+
+        if (isPlayingForVis && !document.hidden) {
+            fsVisualizerRAF = requestAnimationFrame(draw);
+        } else {
+            fsVisualizerRAF = null;
         }
     }
     draw();
 }
 
 export function stopFullscreenVisualizer() {
+    activeFsCanvas = null;
     if (fsVisualizerRAF) {
         cancelAnimationFrame(fsVisualizerRAF);
         fsVisualizerRAF = null;

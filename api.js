@@ -48,14 +48,19 @@ export async function fetchStations(url) {
 export async function registerStationClick(stationuuid) {
     if (!stationuuid) return;
     for (const mirror of API_MIRRORS) {
+        const controller = new AbortController();
+        const timerId = setTimeout(() => controller.abort(), 4000);
         try {
             const baseUrl = mirror.replace(/\/json\/stations\/?$/, '');
-            await fetch(`${baseUrl}/json/url/${encodeURIComponent(stationuuid)}`, {
-                cache: 'no-store'
+            const res = await fetch(`${baseUrl}/json/url/${encodeURIComponent(stationuuid)}`, {
+                cache: 'no-store',
+                signal: controller.signal
             });
-            return;
+            if (res.ok) return;
         } catch {
             // Пробваме следващия сървър при грешка
+        } finally {
+            clearTimeout(timerId);
         }
     }
 }

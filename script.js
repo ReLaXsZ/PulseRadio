@@ -1,6 +1,7 @@
 import { API_BASE, loadCustomStations, fetchStations, registerStationClick } from './api.js';
 import {
     initAudioGraph,
+    initEqControls,
     audioContext,
     startVisualizer,
     setVisualizerPlayingState,
@@ -14,14 +15,16 @@ import {
 } from './i18n.js';
 
 const stationsContainer = document.getElementById('stations-container');
-const audioStream = document.getElementById('audio-stream');
+const primaryAudio = document.getElementById('audio-stream');
+let fallbackAudio = null;
+let activeAudio = primaryAudio;
+
 const stationName = document.getElementById('station-name');
 const stationDetails = document.getElementById('station-details');
 const stationIcon = document.getElementById('station-icon');
 const visualizerCanvas = document.getElementById('visualizer');
 const searchInput = document.getElementById('search-input');
 const allCategoryButtons = document.querySelectorAll('.cat-btn');
-const languageSelect = document.getElementById('language-select');
 const themeToggle = document.getElementById('theme-toggle');
 const shareBtn = document.getElementById('share-btn');
 const favoritesList = document.getElementById('favorites-list');
@@ -40,8 +43,20 @@ const liveDot = document.getElementById('live-dot');
 
 const songInfoContainer = document.getElementById('song-info-container');
 const songInfoText = document.getElementById('song-info-text');
+const copySongBtn = document.getElementById('copy-song-btn');
+const searchSongBtn = document.getElementById('search-song-btn');
 const refreshSongBtn = document.getElementById('refresh-song-btn');
+const sectionTitle = document.getElementById('section-title');
+const loadMoreWrapper = document.getElementById('load-more-wrapper');
+const loadMoreBtn = document.getElementById('load-more-btn');
+const exportFavsBtn = document.getElementById('export-favs-btn');
+const importFavsBtn = document.getElementById('import-favs-btn');
+const importFavsInput = document.getElementById('import-favs-input');
+const mobileFiltersToggle = document.getElementById('mobile-filters-toggle');
+const sidebarCollapsible = document.getElementById('sidebar-collapsible');
 
+const PAGE_SIZE = 60;
+let currentLanguage = 'bg';
 let allStations = [];
 let displayedStations = [];
 let currentStation = null;
@@ -49,7 +64,42 @@ let currentSort = 'clickcount';
 let currentFilterType = 'genre';
 let currentFilterQuery = 'all';
 let selectedCountry = null;
+let selectedCountryCode = null;
+let currentOffset = 0;
+let hasMoreStations = false;
+let isLoadingMore = false;
+let isSearchActive = false;
 let searchRequestId = 0;
+let stationsRequestId = 0;
+let topStationsRequestId = 0;
+let playbackAttemptId = 0;
+let songCheckRequestId = 0;
+let currentAttemptState = null;
+
+function safeStorageGet(storage, key, fallback = null) {
+    try {
+        const value = storage.getItem(key);
+        return value !== null ? value : fallback;
+    } catch {
+        return fallback;
+    }
+}
+
+function safeStorageSet(storage, key, value) {
+    try {
+        storage.setItem(key, value);
+    } catch {
+        // Игнорираме грешки при ограничен или пълен storage
+    }
+}
+
+function safeStorageRemove(storage, key) {
+    try {
+        storage.removeItem(key);
+    } catch {
+        // Игнорираме грешки при изтриване от storage
+    }
+}
 
 const FAILED_STATIONS_STORAGE_KEY = 'radio_failed_stations_v2';
 const FAILED_STATION_TTL_MS = 24 * 60 * 60 * 1000; // 24 часа
@@ -114,7 +164,7 @@ function getSafeIconUrl(url) {
 }
 
 function t(key) {
-    return getTranslation(languageSelect.value, key);
+    return getTranslation(currentLanguage, key);
 }
 
 function getStationKey(station) {
@@ -195,11 +245,12 @@ function isPlayableStation(station) {
     );
 }
 
-function renderStatusMessage(container, text, isError = false) {
+function renderStatusMessage(container, translationKey, isError = false) {
     container.innerHTML = '';
     const p = document.createElement('p');
     p.className = 'loading-text';
-    p.textContent = text;
+    p.dataset.statusKey = translationKey;
+    p.textContent = t(translationKey);
     if (isError) {
         p.style.color = '#ef4444';
     }
@@ -213,15 +264,19 @@ const langOptions = document.querySelectorAll('.lang-option');
 
 langBtn.addEventListener('click', (e) => {
     e.stopPropagation();
-    langDropdown.classList.toggle('show');
+    const isOpen = langDropdown.classList.toggle('show');
+    langBtn.setAttribute('aria-expanded', String(isOpen));
 });
 
 document.addEventListener('click', () => {
     langDropdown.classList.remove('show');
+    langBtn.setAttribute('aria-expanded', 'false');
 });
 
 function setLanguage(langCode) {
-    languageSelect.value = langCode;
+    currentLanguage = langCode;
+    safeStorageSet(localStorage, 'radio_lang', langCode);
+
     const matchingOption = Array.from(langOptions).find(
         (opt) => opt.getAttribute('data-value') === langCode
     );
@@ -248,7 +303,22 @@ function setLanguage(langCode) {
     }
 
     applyTranslationsToDom(langCode);
+
+    if (!currentStation) {
+        stationName.textContent = t('selectStation');
+        stationDetails.textContent = t('genreCountry');
+        if (fsStationName) fsStationName.textContent = t('fullscreenStationTitle');
+    }
+
+    document.querySelectorAll('[data-status-key]').forEach((el) => {
+        el.textContent = t(el.dataset.statusKey);
+    });
+    document.querySelectorAll('.card-share-btn').forEach((btn) => {
+        btn.title = t('share');
+    });
+
     updateCountriesVisibility();
+    updateSectionTitle();
     renderFavorites();
     renderRecentStations();
 }
@@ -288,49 +358,99 @@ function formatMetaLine(station) {
         : `${genrePart} • ${country}`;
 }
 
-function copyStationShareLink(station, triggerEl) {
+const shareCopyTimers = new WeakMap();
+
+function copyStationShareLink(station, triggerEl, showText = false) {
     if (!station || !station.stationuuid) return;
     const url = new URL(window.location.href);
     url.searchParams.set('station', station.stationuuid);
 
-    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
-    navigator.clipboard.writeText(url.toString()).then(() => {
+    const onCopied = () => {
         if (!triggerEl) return;
-        const originalHtml = triggerEl.innerHTML;
+        const existingTimer = shareCopyTimers.get(triggerEl);
+        if (existingTimer) clearTimeout(existingTimer);
+
         triggerEl.classList.add('copied');
-        triggerEl.innerHTML = '<i class="fa-solid fa-check"></i>';
-        setTimeout(() => {
+        triggerEl.innerHTML = showText
+            ? '<i class="fa-solid fa-check"></i> <span></span>'
+            : '<i class="fa-solid fa-check"></i>';
+        if (showText) {
+            triggerEl.querySelector('span').textContent = t('linkCopied');
+        }
+
+        const timerId = setTimeout(() => {
             triggerEl.classList.remove('copied');
-            triggerEl.innerHTML = originalHtml;
-        }, 1600);
-    }).catch(() => {});
+            triggerEl.innerHTML = showText
+                ? '<i class="fa-solid fa-share-nodes"></i> <span data-i18n="share"></span>'
+                : '<i class="fa-solid fa-share-nodes"></i>';
+            if (showText) {
+                triggerEl.querySelector('span').textContent = t('share');
+            }
+            shareCopyTimers.delete(triggerEl);
+        }, showText ? 2000 : 1600);
+        shareCopyTimers.set(triggerEl, timerId);
+    };
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(url.toString()).then(onCopied).catch(() => {});
+    } else {
+        const tempInput = document.createElement('textarea');
+        tempInput.value = url.toString();
+        tempInput.setAttribute('readonly', '');
+        tempInput.style.position = 'fixed';
+        tempInput.style.opacity = '0';
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        try {
+            if (document.execCommand('copy')) onCopied();
+        } catch {
+            // Игнорираме при отказ
+        }
+        document.body.removeChild(tempInput);
+    }
 }
 
 // ======================== ЛЮБИМИ (PLAYLIST) ========================
 function getFavorites() {
     try {
-        return JSON.parse(localStorage.getItem('radio_favorites') || '[]');
+        return JSON.parse(safeStorageGet(localStorage, 'radio_favorites', '[]'));
     } catch {
         return [];
     }
 }
-function setFavorites(favs) { localStorage.setItem('radio_favorites', JSON.stringify(favs)); }
+function setFavorites(favs) { safeStorageSet(localStorage, 'radio_favorites', JSON.stringify(favs)); }
 function isFavorite(uuid) { return getFavorites().some(s => s.stationuuid === uuid); }
 
 function toggleFavorite(station, btn) {
     let favs = getFavorites();
     if (isFavorite(station.stationuuid)) {
         favs = favs.filter(s => s.stationuuid !== station.stationuuid);
-        btn.classList.remove('active');
-        btn.innerHTML = '<i class="fa-regular fa-heart"></i>';
+        if (btn) {
+            btn.classList.remove('active');
+            btn.innerHTML = '<i class="fa-regular fa-heart"></i>';
+        }
     } else {
         const cleanStation = { ...station, name: cleanString(station.name) };
         favs.push(cleanStation);
-        btn.classList.add('active');
-        btn.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        if (btn) {
+            btn.classList.add('active');
+            btn.innerHTML = '<i class="fa-solid fa-heart"></i>';
+        }
     }
     setFavorites(favs);
+    syncFavoriteCardButtons();
     renderFavorites();
+}
+
+function syncFavoriteCardButtons() {
+    document.querySelectorAll('.station-card').forEach(card => {
+        const uuid = card.dataset.uuid;
+        const btn = card.querySelector('.fav-btn');
+        if (!btn || !uuid) return;
+        const fav = isFavorite(uuid);
+        btn.classList.toggle('active', fav);
+        btn.innerHTML = fav ? '<i class="fa-solid fa-heart"></i>' : '<i class="fa-regular fa-heart"></i>';
+    });
 }
 
 function renderFavorites() {
@@ -345,6 +465,9 @@ function renderFavorites() {
     }
     const fragment = document.createDocumentFragment();
     favs.forEach(station => {
+        const row = document.createElement('div');
+        row.className = 'fav-sidebar-row';
+
         const btn = document.createElement('button');
         btn.type = 'button';
         btn.className = 'fav-sidebar-item';
@@ -370,17 +493,95 @@ function renderFavorites() {
         info.appendChild(metaSpan);
         btn.appendChild(img);
         btn.appendChild(info);
-
         btn.addEventListener('click', () => playStation(station));
-        fragment.appendChild(btn);
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'fav-remove-btn';
+        removeBtn.title = t('removeFavTitle');
+        removeBtn.setAttribute('aria-label', t('removeFavTitle'));
+        removeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const updated = getFavorites().filter(s => getStationKey(s) !== getStationKey(station));
+            setFavorites(updated);
+            syncFavoriteCardButtons();
+            renderFavorites();
+        });
+
+        row.appendChild(btn);
+        row.appendChild(removeBtn);
+        fragment.appendChild(row);
     });
     favoritesList.appendChild(fragment);
+}
+
+if (exportFavsBtn) {
+    exportFavsBtn.addEventListener('click', () => {
+        const favs = getFavorites();
+        const blob = new Blob([JSON.stringify(favs, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'globalpulse-favorites.json';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+    });
+}
+
+if (importFavsBtn && importFavsInput) {
+    importFavsBtn.addEventListener('click', () => {
+        importFavsInput.click();
+    });
+
+    importFavsInput.addEventListener('change', async (e) => {
+        const file = e.target.files && e.target.files[0];
+        if (!file) return;
+        try {
+            const text = await file.text();
+            const parsed = JSON.parse(text);
+            if (!Array.isArray(parsed)) throw new Error('Invalid format');
+
+            const existing = getFavorites();
+            const byKey = new Map(existing.map(s => [getStationKey(s), s]));
+            let added = 0;
+            parsed.forEach((item) => {
+                if (!item || !isSafeStreamUrl(item.url_resolved)) return;
+                const key = getStationKey(item);
+                if (!key || byKey.has(key)) return;
+                byKey.set(key, {
+                    stationuuid: item.stationuuid || key,
+                    name: cleanString(item.name),
+                    url_resolved: item.url_resolved,
+                    country: item.country || '',
+                    tags: item.tags || '',
+                    codec: item.codec || '',
+                    bitrate: item.bitrate || 0,
+                    favicon: item.favicon || ''
+                });
+                added++;
+            });
+
+            if (added > 0 || parsed.length === 0) {
+                setFavorites(Array.from(byKey.values()));
+                syncFavoriteCardButtons();
+                renderFavorites();
+            }
+            alert(t('importSuccess'));
+        } catch {
+            alert(t('importError'));
+        } finally {
+            importFavsInput.value = '';
+        }
+    });
 }
 
 // ======================== НАСКОРО СЛУШАНИ ========================
 function getRecentStations() {
     try {
-        return JSON.parse(localStorage.getItem('radio_recent') || '[]');
+        return JSON.parse(safeStorageGet(localStorage, 'radio_recent', '[]'));
     } catch {
         return [];
     }
@@ -400,7 +601,7 @@ function addRecentStation(station) {
         favicon: station.favicon
     });
     if (recent.length > 5) recent = recent.slice(0, 5);
-    localStorage.setItem('radio_recent', JSON.stringify(recent));
+    safeStorageSet(localStorage, 'radio_recent', JSON.stringify(recent));
     renderRecentStations();
 }
 
@@ -415,7 +616,8 @@ function renderRecentStations() {
 
     const fragment = document.createDocumentFragment();
     recent.forEach(station => {
-        const card = document.createElement('div');
+        const card = document.createElement('button');
+        card.type = 'button';
         card.className = 'recent-card';
 
         const img = document.createElement('img');
@@ -446,25 +648,30 @@ function renderRecentStations() {
 
 if (clearRecentBtn) {
     clearRecentBtn.addEventListener('click', () => {
-        localStorage.removeItem('radio_recent');
+        safeStorageRemove(localStorage, 'radio_recent');
         renderRecentStations();
     });
 }
 
 // ======================== БЪРЗ ИЗБОР ========================
-async function loadTopStations(type = 'global', query = '') {
-    renderStatusMessage(quickPicksContainer, t('loadingTop'));
+async function loadTopStations(type = 'global', query = '', countryCode = null) {
+    const reqId = ++topStationsRequestId;
+    renderStatusMessage(quickPicksContainer, 'loadingTop');
     let url = `${API_BASE}/topclick/12`;
-    if (type === 'country' && query) {
+    if (type === 'country' && countryCode) {
+        url = `${API_BASE}/bycountrycodeexact/${encodeURIComponent(countryCode)}?limit=12&order=clickcount&reverse=true`;
+    } else if (type === 'country' && query) {
         url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=12&order=clickcount&reverse=true`;
     } else if (type === 'genre' && query !== 'all') {
         url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=12&order=clickcount&reverse=true`;
     }
     try {
         const topStations = await fetchStations(url);
+        if (reqId !== topStationsRequestId) return;
         renderQuickPicks(topStations);
     } catch {
-        renderStatusMessage(quickPicksContainer, t('failed'), true);
+        if (reqId !== topStationsRequestId) return;
+        renderStatusMessage(quickPicksContainer, 'failed', true);
     }
 }
 
@@ -474,8 +681,9 @@ function renderQuickPicks(stations) {
     const playable = stations.filter(s => isPlayableStation(s)).slice(0, 8);
     const fragment = document.createDocumentFragment();
     playable.forEach(station => {
-        const div = document.createElement('div');
-        div.className = 'quick-pick-item';
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'quick-pick-item';
         const img = document.createElement('img');
         img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
@@ -483,22 +691,22 @@ function renderQuickPicks(stations) {
         img.onerror = () => { img.src = DEFAULT_ICON; };
         const span = document.createElement('span');
         span.textContent = cleanString(station.name);
-        div.appendChild(img);
-        div.appendChild(span);
-        div.addEventListener('click', () => playStation(station));
-        fragment.appendChild(div);
+        btn.appendChild(img);
+        btn.appendChild(span);
+        btn.addEventListener('click', () => playStation(station));
+        fragment.appendChild(btn);
     });
     quickPicksContainer.appendChild(fragment);
 }
 
 // ======================== ТЕМА ========================
-const savedTheme = localStorage.getItem('radio_theme') || 'dark';
+const savedTheme = safeStorageGet(localStorage, 'radio_theme', 'dark');
 if (savedTheme === 'light') document.body.classList.add('light-theme');
 updateThemeIcon();
 
 themeToggle.addEventListener('click', () => {
     const isLight = document.body.classList.toggle('light-theme');
-    localStorage.setItem('radio_theme', isLight ? 'light' : 'dark');
+    safeStorageSet(localStorage, 'radio_theme', isLight ? 'light' : 'dark');
     updateThemeIcon();
 });
 
@@ -508,65 +716,192 @@ function updateThemeIcon() {
 }
 
 // ======================== ЗАРЕЖДАНЕ НА СТАНЦИИ ========================
-async function loadStations(type, query, sort = 'clickcount') {
-    renderStatusMessage(stationsContainer, t('loading'));
+function buildStationsApiUrl(type, query, sort, offset, countryCode) {
+    const order = sort === 'name' || sort === 'votes' ? sort : 'clickcount';
+    const reverse = order === 'name' ? 'false' : 'true';
+    const params = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+        order,
+        reverse,
+        hidebroken: 'true'
+    });
+
+    if (type === 'genre' && query !== 'all') {
+        params.set('tag', query);
+    } else if (type === 'country') {
+        if (countryCode) {
+            params.set('countrycode', countryCode);
+        } else if (query) {
+            params.set('country', query);
+        }
+    }
+
+    return `${API_BASE}/search?${params.toString()}`;
+}
+
+function updateLoadMoreVisibility() {
+    if (!loadMoreWrapper) return;
+    const shouldShow = hasMoreStations && !isSearchActive && displayedStations.length > 0;
+    loadMoreWrapper.style.display = shouldShow ? 'flex' : 'none';
+}
+
+function updateSectionTitle() {
+    if (!sectionTitle) return;
+    const base = t('stationsTitle');
+    const searchTerm = searchInput ? searchInput.value.trim() : '';
+    let filterLabel = '';
+
+    if (searchTerm) {
+        filterLabel = `"${searchTerm}"`;
+    } else if (currentFilterType === 'country' && currentFilterQuery) {
+        filterLabel = currentFilterQuery;
+    } else if (currentFilterType === 'genre' && currentFilterQuery && currentFilterQuery !== 'all') {
+        filterLabel = t(currentFilterQuery);
+    } else {
+        filterLabel = t('all');
+    }
+
+    const countPart = displayedStations.length > 0 ? ` (${displayedStations.length})` : '';
+    sectionTitle.textContent = filterLabel ? `${base} • ${filterLabel}${countPart}` : `${base}${countPart}`;
+}
+
+async function loadStations(type, query, sort = 'clickcount', options = {}) {
+    const { append = false, countryCode = selectedCountryCode } = options;
+    const reqId = ++stationsRequestId;
+
+    if (!append) {
+        renderStatusMessage(stationsContainer, 'loading');
+        currentOffset = 0;
+        hasMoreStations = false;
+        isSearchActive = false;
+        updateLoadMoreVisibility();
+    }
+
     currentFilterType = type;
     currentFilterQuery = query;
     currentSort = sort;
 
     if (type === 'country') {
         selectedCountry = query;
-    } else if (type === 'genre' && query === 'all') {
+        selectedCountryCode = countryCode || null;
+    } else if (type === 'genre') {
         selectedCountry = null;
+        selectedCountryCode = null;
     }
 
-    const cacheKey = `radio_cache_${type}_${query}_${sort}`;
-    const cachedData = sessionStorage.getItem(cacheKey);
+    const offsetToLoad = append ? currentOffset : 0;
+    const cacheKey = `radio_cache_${type}_${countryCode || query}_${sort}_${offsetToLoad}`;
+    const cachedData = safeStorageGet(sessionStorage, cacheKey, null);
 
     if (cachedData) {
         try {
-            allStations = JSON.parse(cachedData);
-            displayStations(allStations);
-            return;
+            const parsedCache = JSON.parse(cachedData);
+            if (Array.isArray(parsedCache)) {
+                if (append) {
+                    const existingKeys = new Set(allStations.map(s => getStationKey(s)));
+                    const extra = parsedCache.filter(s => !existingKeys.has(getStationKey(s)));
+                    allStations = [...allStations, ...extra];
+                } else {
+                    allStations = parsedCache;
+                }
+                currentOffset = offsetToLoad + PAGE_SIZE;
+                hasMoreStations = parsedCache.length >= PAGE_SIZE;
+                displayStations(allStations);
+                return;
+            }
         } catch {
-            sessionStorage.removeItem(cacheKey);
+            safeStorageRemove(sessionStorage, cacheKey);
         }
     }
 
-    let url = `${API_BASE}/topclick/60`;
-    if (type === 'genre' && query !== 'all') {
-        url = `${API_BASE}/bytag/${encodeURIComponent(query)}?limit=60&order=${sort}&reverse=true`;
-    } else if (type === 'country') {
-        url = `${API_BASE}/bycountry/${encodeURIComponent(query)}?limit=60&order=${sort}&reverse=true`;
-    } else {
-        url = `${API_BASE}/topclick/60?order=${sort}&reverse=true`;
-    }
+    const url = buildStationsApiUrl(type, query, sort, offsetToLoad, selectedCountryCode);
 
     try {
         let apiStations = await fetchStations(url);
-        if (!Array.isArray(apiStations) || apiStations.length === 0) {
+        if (reqId !== stationsRequestId) return;
+
+        if (!Array.isArray(apiStations)) {
+            apiStations = [];
+        }
+
+        let filteredCustom = [];
+        if (!append) {
+            const custom = await loadCustomStations();
+            if (reqId !== stationsRequestId) return;
+
+            filteredCustom = Array.isArray(custom) ? custom : [];
+            if (type === 'genre' && query !== 'all') {
+                filteredCustom = filteredCustom.filter(s => (s.tags || '').toLowerCase().includes(query.toLowerCase()));
+            } else if (type === 'country') {
+                filteredCustom = filteredCustom.filter(s => (s.country || '').toLowerCase() === query.toLowerCase());
+            }
+        }
+
+        if (!append && apiStations.length === 0 && filteredCustom.length === 0) {
             if (type === 'country') {
-                renderStatusMessage(stationsContainer, t('noStations'));
+                allStations = [];
+                hasMoreStations = false;
+                renderStatusMessage(stationsContainer, 'noStations');
+                updateSectionTitle();
+                updateLoadMoreVisibility();
                 return;
             }
             apiStations = await fetchStations(`${API_BASE}/topclick/60`);
+            if (reqId !== stationsRequestId) return;
+            if (!Array.isArray(apiStations)) apiStations = [];
         }
 
-        const custom = await loadCustomStations();
-        let filteredCustom = Array.isArray(custom) ? custom : [];
-        if (type === 'genre' && query !== 'all') {
-            filteredCustom = filteredCustom.filter(s => (s.tags || '').toLowerCase().includes(query.toLowerCase()));
-        } else if (type === 'country') {
-            filteredCustom = filteredCustom.filter(s => (s.country || '').toLowerCase() === query.toLowerCase());
+        hasMoreStations = apiStations.length >= PAGE_SIZE;
+        currentOffset = offsetToLoad + PAGE_SIZE;
+
+        if (append) {
+            const existingKeys = new Set(allStations.map(s => getStationKey(s)));
+            const fresh = apiStations.filter(s => !existingKeys.has(getStationKey(s)));
+            allStations = [...allStations, ...fresh];
+            safeStorageSet(sessionStorage, cacheKey, JSON.stringify(apiStations));
+        } else {
+            const combined = [...filteredCustom, ...apiStations];
+            const deduped = new Map();
+            combined.forEach((s) => {
+                const key = getStationKey(s);
+                if (key && !deduped.has(key)) deduped.set(key, s);
+            });
+            allStations = Array.from(deduped.values());
+            sortStationsLocally(sort);
+            safeStorageSet(sessionStorage, cacheKey, JSON.stringify(allStations));
         }
 
-        allStations = [...filteredCustom, ...apiStations];
-        sortStationsLocally(sort);
-        sessionStorage.setItem(cacheKey, JSON.stringify(allStations));
         displayStations(allStations);
     } catch {
-        renderStatusMessage(stationsContainer, t('failed'), true);
+        if (reqId !== stationsRequestId) return;
+        if (!append) {
+            hasMoreStations = false;
+            updateLoadMoreVisibility();
+            renderStatusMessage(stationsContainer, 'failed', true);
+        }
     }
+}
+
+if (loadMoreBtn) {
+    loadMoreBtn.addEventListener('click', async () => {
+        if (isLoadingMore || !hasMoreStations || isSearchActive) return;
+        isLoadingMore = true;
+        loadMoreBtn.disabled = true;
+        loadMoreBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span></span>';
+        loadMoreBtn.querySelector('span').textContent = t('loading');
+        try {
+            await loadStations(currentFilterType, currentFilterQuery, currentSort, {
+                append: true,
+                countryCode: selectedCountryCode
+            });
+        } finally {
+            isLoadingMore = false;
+            loadMoreBtn.disabled = false;
+            loadMoreBtn.innerHTML = '<i class="fa-solid fa-plus"></i> <span data-i18n="loadMore"></span>';
+            loadMoreBtn.querySelector('span').textContent = t('loadMore');
+        }
+    });
 }
 
 function sortStationsLocally(sortType) {
@@ -592,10 +927,13 @@ searchInput.addEventListener('input', (e) => {
     const lowerTerm = term.toLowerCase();
     if (lowerTerm.length === 0) {
         searchRequestId++;
+        isSearchActive = false;
         displayStations(allStations);
         return;
     }
 
+    isSearchActive = true;
+    updateLoadMoreVisibility();
     const reqId = ++searchRequestId;
     searchTimeout = setTimeout(async () => {
         try {
@@ -603,15 +941,19 @@ searchInput.addEventListener('input', (e) => {
             if (reqId !== searchRequestId) return;
 
             const activeCountry = selectedCountry || (currentFilterType === 'country' ? currentFilterQuery : null);
+            const activeCountryCode = selectedCountryCode;
 
             const matchesQuery = (s) =>
                 (s.name || '').toLowerCase().includes(lowerTerm) ||
                 (s.tags || '').toLowerCase().includes(lowerTerm);
 
             const matchesCountry = (s) => {
-                if (!activeCountry) return true;
+                if (!activeCountry && !activeCountryCode) return true;
+                if (activeCountryCode && s.countrycode && s.countrycode.toUpperCase() === activeCountryCode.toUpperCase()) {
+                    return true;
+                }
                 const c = (s.country || '').toLowerCase();
-                const target = activeCountry.toLowerCase();
+                const target = (activeCountry || '').toLowerCase();
                 if (target === 'usa' || target === 'united states') {
                     return c.includes('united states') || c.includes('usa');
                 }
@@ -626,9 +968,12 @@ searchInput.addEventListener('input', (e) => {
 
             let apiResults = [];
             if (lowerTerm.length >= 2) {
-                const apiUrl = activeCountry
-                    ? `${API_BASE}/search?name=${encodeURIComponent(lowerTerm)}&country=${encodeURIComponent(activeCountry)}&limit=60`
-                    : `${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`;
+                let apiUrl = `${API_BASE}/byname/${encodeURIComponent(lowerTerm)}?limit=60`;
+                if (activeCountryCode) {
+                    apiUrl = `${API_BASE}/search?name=${encodeURIComponent(lowerTerm)}&countrycode=${encodeURIComponent(activeCountryCode)}&limit=60`;
+                } else if (activeCountry) {
+                    apiUrl = `${API_BASE}/search?name=${encodeURIComponent(lowerTerm)}&country=${encodeURIComponent(activeCountry)}&limit=60`;
+                }
                 apiResults = await fetchStations(apiUrl);
                 if (reqId !== searchRequestId) return;
             }
@@ -743,18 +1088,24 @@ function displayStations(stations) {
     displayedStations = (Array.isArray(stations) ? stations : [])
         .filter(s => isPlayableStation(s));
 
+    updateSectionTitle();
+    updateLoadMoreVisibility();
+
     if (displayedStations.length === 0) {
-        renderStatusMessage(stationsContainer, t('noStations'));
+        renderStatusMessage(stationsContainer, 'noStations');
         return;
     }
 
     const fragment = document.createDocumentFragment();
     displayedStations.forEach(station => {
-        const isCurrentPlaying = currentStation && currentStation.stationuuid === station.stationuuid && !audioStream.paused;
+        const isCurrentPlaying = currentStation && currentStation.stationuuid === station.stationuuid && !activeAudio.paused;
 
         const card = document.createElement('div');
         card.className = 'station-card';
         card.dataset.uuid = station.stationuuid;
+        card.tabIndex = 0;
+        card.setAttribute('role', 'button');
+        card.setAttribute('aria-label', cleanString(station.name));
         if (isCurrentPlaying) card.classList.add('playing');
 
         const img = document.createElement('img');
@@ -795,7 +1146,7 @@ function displayStations(stations) {
         cardShareBtn.innerHTML = '<i class="fa-solid fa-share-nodes"></i>';
         cardShareBtn.addEventListener('click', (e) => {
             e.stopPropagation();
-            copyStationShareLink(station, cardShareBtn);
+            copyStationShareLink(station, cardShareBtn, false);
         });
 
         const favBtn = document.createElement('button');
@@ -821,6 +1172,12 @@ function displayStations(stations) {
         card.appendChild(actionsDiv);
 
         card.addEventListener('click', () => playStation(station));
+        card.addEventListener('keydown', (e) => {
+            if (e.target === card && (e.key === 'Enter' || e.key === ' ')) {
+                e.preventDefault();
+                playStation(station);
+            }
+        });
         fragment.appendChild(card);
     });
     stationsContainer.appendChild(fragment);
@@ -828,7 +1185,7 @@ function displayStations(stations) {
 
 function updateActiveCardHighlight() {
     document.querySelectorAll('.station-card').forEach(card => {
-        const isMatch = currentStation && card.dataset.uuid === currentStation.stationuuid && !audioStream.paused;
+        const isMatch = currentStation && card.dataset.uuid === currentStation.stationuuid && !activeAudio.paused;
         card.classList.toggle('playing', Boolean(isMatch));
         const indicator = card.querySelector('.play-btn');
         if (indicator) {
@@ -844,6 +1201,9 @@ function clearSongInfo() {
     if (songInfoText) {
         songInfoText.textContent = '';
     }
+    if (searchSongBtn) {
+        searchSongBtn.href = '#';
+    }
     if (songInfoContainer) {
         songInfoContainer.style.display = 'none';
     }
@@ -858,18 +1218,193 @@ function showSongInfo(title) {
     if (songInfoText) {
         songInfoText.textContent = cleaned;
     }
+    if (searchSongBtn) {
+        searchSongBtn.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(cleaned)}`;
+    }
     if (songInfoContainer) {
         songInfoContainer.style.display = 'flex';
     }
+    if (currentStation) {
+        updateMediaSession(currentStation, cleaned);
+    }
+}
+
+if (copySongBtn) {
+    copySongBtn.addEventListener('click', () => {
+        const text = songInfoText ? songInfoText.textContent.trim() : '';
+        if (!text || !navigator.clipboard || !navigator.clipboard.writeText) return;
+        navigator.clipboard.writeText(text).then(() => {
+            copySongBtn.innerHTML = '<i class="fa-solid fa-check"></i>';
+            setTimeout(() => {
+                copySongBtn.innerHTML = '<i class="fa-regular fa-copy"></i>';
+            }, 1400);
+        }).catch(() => {});
+    });
 }
 
 // ======================== ПУСКАНЕ НА СТАНЦИЯ ========================
+function setPlayButtonState(state) {
+    if (!playPauseBtn) return;
+    if (state === 'loading') {
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    } else if (state === 'pause') {
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    } else {
+        playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    }
+}
+
+function updateMediaSession(station, songTitle = '') {
+    if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined' || !station) return;
+    try {
+        const iconUrl = getSafeIconUrl(station.favicon);
+        const artworkSrc = iconUrl.startsWith('http') ? iconUrl : 'favicon-192x192.png';
+        navigator.mediaSession.metadata = new MediaMetadata({
+            title: songTitle || cleanString(station.name),
+            artist: songTitle ? cleanString(station.name) : formatMetaLine(station),
+            album: 'GlobalPulse Radio',
+            artwork: [{ src: artworkSrc, sizes: '192x192', type: 'image/png' }]
+        });
+    } catch {
+        // Игнорираме ако браузърът не поддържа MediaMetadata
+    }
+}
+
+function setupMediaSessionHandlers() {
+    if (!('mediaSession' in navigator)) return;
+    const handlers = {
+        play: () => playPauseBtn && playPauseBtn.click(),
+        pause: () => activeAudio && !activeAudio.paused && activeAudio.pause(),
+        previoustrack: () => prevStationBtn && prevStationBtn.click(),
+        nexttrack: () => nextStationBtn && nextStationBtn.click()
+    };
+    Object.entries(handlers).forEach(([action, fn]) => {
+        try {
+            navigator.mediaSession.setActionHandler(action, fn);
+        } catch {
+            // Игнорираме неподдържани media actions
+        }
+    });
+}
+
+setupMediaSessionHandlers();
+
+function getFallbackAudio() {
+    if (!fallbackAudio) {
+        fallbackAudio = document.createElement('audio');
+        fallbackAudio.preload = 'none';
+        bindAudioEvents(fallbackAudio);
+    }
+    return fallbackAudio;
+}
+
+function stopInactiveAudio(otherAudio) {
+    if (!otherAudio) return;
+    otherAudio.pause();
+    otherAudio.removeAttribute('src');
+    otherAudio.load();
+}
+
+function bindAudioEvents(audioEl) {
+    if (!audioEl || audioEl.dataset.bound === 'true') return;
+    audioEl.dataset.bound = 'true';
+
+    audioEl.addEventListener('play', () => {
+        if (audioEl !== activeAudio) return;
+        setPlayButtonState(currentAttemptState && !currentAttemptState.streamStarted ? 'loading' : 'pause');
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'playing';
+        }
+        updateActiveCardHighlight();
+    });
+
+    audioEl.addEventListener('pause', () => {
+        if (audioEl !== activeAudio) return;
+        clearPlaybackWatchdog();
+        clearStallWatchdog();
+        setPlayButtonState('play');
+        liveDot.classList.remove('active');
+        setVisualizerPlayingState(false);
+        if ('mediaSession' in navigator) {
+            navigator.mediaSession.playbackState = 'paused';
+        }
+        updateActiveCardHighlight();
+    });
+
+    audioEl.addEventListener('timeupdate', () => {
+        if (audioEl !== activeAudio) return;
+        currentTimeEl.textContent = formatTime(audioEl.currentTime);
+    });
+
+    audioEl.addEventListener('playing', () => {
+        if (audioEl !== activeAudio || !currentAttemptState || currentAttemptState.audioEl !== audioEl) return;
+        currentAttemptState.streamStarted = true;
+        clearPlaybackWatchdog();
+        clearStallWatchdog();
+        setPlayButtonState('pause');
+        liveDot.classList.add('active');
+        setVisualizerPlayingState(true);
+        if (!statusRestoreTimer && currentStation && stationDetails.textContent === t('pressPlayToStart')) {
+            stationDetails.textContent = formatMetaLine(currentStation);
+        }
+    });
+
+    const handleStall = () => {
+        if (audioEl !== activeAudio || audioEl.paused || !currentAttemptState || currentAttemptState.audioEl !== audioEl) return;
+        setPlayButtonState('loading');
+        const attemptSnapshot = currentAttemptState;
+        clearStallWatchdog();
+        stallWatchdogTimer = setTimeout(() => {
+            if (
+                activeAudio === audioEl &&
+                !audioEl.paused &&
+                currentAttemptState &&
+                currentAttemptState.attemptId === attemptSnapshot.attemptId
+            ) {
+                advanceAfterFailure(attemptSnapshot.station, attemptSnapshot.retryCount, 'stream_stalled');
+            }
+        }, STREAM_STALL_TIMEOUT_MS);
+    };
+
+    audioEl.addEventListener('stalled', handleStall);
+    audioEl.addEventListener('waiting', handleStall);
+
+    audioEl.addEventListener('error', () => {
+        if (
+            audioEl !== activeAudio ||
+            !audioEl.getAttribute('src') ||
+            !currentAttemptState ||
+            currentAttemptState.audioEl !== audioEl
+        ) {
+            return;
+        }
+        const attemptSnapshot = currentAttemptState;
+        if (!attemptSnapshot.useCorsFallback) {
+            playStation(attemptSnapshot.station, attemptSnapshot.retryCount, true);
+            return;
+        }
+        advanceAfterFailure(attemptSnapshot.station, attemptSnapshot.retryCount, 'audio_error');
+    });
+}
+
+bindAudioEvents(primaryAudio);
+
+function updatePlayerHeaderForStation(station) {
+    stationName.textContent = cleanString(station.name);
+    stationDetails.textContent = formatMetaLine(station);
+    stationIcon.src = getSafeIconUrl(station.favicon);
+    stationIcon.onerror = () => { stationIcon.src = DEFAULT_ICON; };
+    shareBtn.disabled = false;
+    currentTimeEl.textContent = '0:00';
+}
+
 function advanceAfterFailure(failedStation, retryCount, reason = 'error') {
     clearPlaybackWatchdog();
     clearStallWatchdog();
     markStationFailed(failedStation, reason);
     setVisualizerPlayingState(false);
     liveDot.classList.remove('active');
+    playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
 
     const pool = displayedStations.length > 0 ? displayedStations : allStations;
     const currentIdx = pool.findIndex(s => getStationKey(s) === getStationKey(failedStation));
@@ -891,7 +1426,7 @@ function advanceAfterFailure(failedStation, retryCount, reason = 'error') {
         const nextLabel = cleanString(nextStation.name);
         playStation(nextStation, retryCount + 1).then(() => {
             if (currentStation && getStationKey(currentStation) === getStationKey(nextStation)) {
-                showTemporaryPlayerNotice(`Skipped: ${skippedLabel} → ${nextLabel}`, nextStation);
+                showTemporaryPlayerNotice(`${t('skippedPrefix')} ${skippedLabel} → ${nextLabel}`, nextStation);
             }
         });
         return;
@@ -903,7 +1438,7 @@ function advanceAfterFailure(failedStation, retryCount, reason = 'error') {
     updateActiveCardHighlight();
 }
 
-async function playStation(station, retryCount = 0) {
+async function playStation(station, retryCount = 0, useCorsFallback = false) {
     clearPlaybackWatchdog();
     clearStallWatchdog();
 
@@ -919,80 +1454,88 @@ async function playStation(station, retryCount = 0) {
         return;
     }
 
+    const attemptId = ++playbackAttemptId;
+    const targetAudio = useCorsFallback ? getFallbackAudio() : primaryAudio;
+    const otherAudio = useCorsFallback ? primaryAudio : fallbackAudio;
+
+    stopInactiveAudio(otherAudio);
+    activeAudio = targetAudio;
+    activeAudio.volume = Number(volumeSlider.value);
+
     currentStation = station;
-    audioStream.src = station.url_resolved;
+    currentAttemptState = {
+        attemptId,
+        station,
+        retryCount,
+        useCorsFallback,
+        audioEl: targetAudio,
+        streamStarted: false
+    };
+
+    updatePlayerHeaderForStation(station);
+    updateMediaSession(station);
     clearSongInfo();
+    setPlayButtonState('loading');
+    updateActiveCardHighlight();
 
-    let streamStarted = false;
-
-    const onStreamPlaying = () => {
-        streamStarted = true;
-        clearPlaybackWatchdog();
-        clearStallWatchdog();
-    };
-
-    const onStreamStalled = () => {
-        if (audioStream.paused) return;
-        clearStallWatchdog();
-        stallWatchdogTimer = setTimeout(() => {
-            if (!audioStream.paused && currentStation && getStationKey(currentStation) === getStationKey(station)) {
-                audioStream.removeEventListener('playing', onStreamPlaying);
-                audioStream.removeEventListener('stalled', onStreamStalled);
-                audioStream.removeEventListener('waiting', onStreamStalled);
-                advanceAfterFailure(station, retryCount, 'stream_stalled');
-            }
-        }, STREAM_STALL_TIMEOUT_MS);
-    };
-
-    audioStream.addEventListener('playing', onStreamPlaying);
-    audioStream.addEventListener('stalled', onStreamStalled);
-    audioStream.addEventListener('waiting', onStreamStalled);
-
-    audioStream.onerror = () => {
-        audioStream.removeEventListener('playing', onStreamPlaying);
-        audioStream.removeEventListener('stalled', onStreamStalled);
-        audioStream.removeEventListener('waiting', onStreamStalled);
-        advanceAfterFailure(station, retryCount, 'audio_error');
-    };
+    targetAudio.src = station.url_resolved;
 
     playbackWatchdogTimer = setTimeout(() => {
-        if (!streamStarted && currentStation && getStationKey(currentStation) === getStationKey(station)) {
-            audioStream.removeEventListener('playing', onStreamPlaying);
-            audioStream.removeEventListener('stalled', onStreamStalled);
-            audioStream.removeEventListener('waiting', onStreamStalled);
-            advanceAfterFailure(station, retryCount, 'silent_or_stalled_start');
+        if (
+            currentAttemptState &&
+            currentAttemptState.attemptId === attemptId &&
+            !currentAttemptState.streamStarted
+        ) {
+            if (!useCorsFallback) {
+                playStation(station, retryCount, true);
+            } else {
+                advanceAfterFailure(station, retryCount, 'silent_or_stalled_start');
+            }
         }
     }, STREAM_START_TIMEOUT_MS);
 
     try {
-        await audioStream.play();
-    } catch {
-        audioStream.removeEventListener('playing', onStreamPlaying);
-        audioStream.removeEventListener('stalled', onStreamStalled);
-        audioStream.removeEventListener('waiting', onStreamStalled);
+        await targetAudio.play();
+    } catch (err) {
+        if (attemptId !== playbackAttemptId) return;
+
+        if (err && err.name === 'AbortError') {
+            return;
+        }
+
+        if (err && err.name === 'NotAllowedError') {
+            clearPlaybackWatchdog();
+            clearStallWatchdog();
+            stationDetails.textContent = t('pressPlayToStart');
+            playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+            liveDot.classList.remove('active');
+            setVisualizerPlayingState(false);
+            updateActiveCardHighlight();
+            return;
+        }
+
+        if (!useCorsFallback) {
+            return playStation(station, retryCount, true);
+        }
         advanceAfterFailure(station, retryCount, 'play_rejected');
         return;
     }
+
+    if (attemptId !== playbackAttemptId) return;
 
     if (station.stationuuid) {
         registerStationClick(station.stationuuid).catch(() => {});
     }
 
-    const name = cleanString(station.name);
-    stationName.textContent = name;
-    stationDetails.textContent = formatMetaLine(station);
-    stationIcon.src = getSafeIconUrl(station.favicon);
-    stationIcon.onerror = () => { stationIcon.src = DEFAULT_ICON; };
-    shareBtn.disabled = false;
-
     addRecentStation(station);
     updateActiveCardHighlight();
-
     checkCurrentSong(station);
 
-    initAudioGraph(audioStream, visualizerCanvas);
-    if (audioContext && audioContext.state === 'suspended') {
-        await audioContext.resume();
+    if (!useCorsFallback) {
+        initAudioGraph(primaryAudio, visualizerCanvas);
+        if (audioContext && audioContext.state === 'suspended') {
+            await audioContext.resume().catch(() => {});
+        }
     }
     setVisualizerPlayingState(true);
 }
@@ -1002,6 +1545,7 @@ refreshSongBtn.addEventListener('click', () => {
 });
 
 async function checkCurrentSong(station) {
+    const reqId = ++songCheckRequestId;
     if (!station || !station.url_resolved) {
         clearSongInfo();
         return;
@@ -1022,9 +1566,12 @@ async function checkCurrentSong(station) {
                 const timeoutId = setTimeout(() => controller.abort(), 2800);
                 const response = await fetch(statusUrl, { signal: controller.signal });
                 clearTimeout(timeoutId);
+                if (reqId !== songCheckRequestId) return;
                 if (!response.ok) continue;
 
                 const data = await response.json();
+                if (reqId !== songCheckRequestId) return;
+
                 if (data.icestats && data.icestats.source) {
                     const sources = Array.isArray(data.icestats.source) ? data.icestats.source : [data.icestats.source];
                     const currentSource = sources.find(s => s.listenurl && s.listenurl.includes(urlObj.pathname)) || sources[0];
@@ -1045,9 +1592,9 @@ async function checkCurrentSong(station) {
             }
         }
 
-        clearSongInfo();
+        if (reqId === songCheckRequestId) clearSongInfo();
     } catch {
-        clearSongInfo();
+        if (reqId === songCheckRequestId) clearSongInfo();
     }
 }
 
@@ -1070,47 +1617,57 @@ nextStationBtn.addEventListener('click', () => {
 
 shareBtn.addEventListener('click', () => {
     if (!currentStation) return;
-    const url = new URL(window.location.href);
-    url.searchParams.set('station', currentStation.stationuuid);
-    if (!navigator.clipboard || !navigator.clipboard.writeText) return;
-    navigator.clipboard.writeText(url.toString()).then(() => {
-        const original = shareBtn.innerHTML;
-        shareBtn.innerHTML = `<i class="fa-solid fa-check"></i> <span></span>`;
-        shareBtn.querySelector('span').textContent = t('linkCopied');
-        setTimeout(() => { shareBtn.innerHTML = original; }, 2000);
-    }).catch(() => {});
+    copyStationShareLink(currentStation, shareBtn, true);
 });
 
 allCategoryButtons.forEach(btn => {
     btn.addEventListener('click', () => {
         allCategoryButtons.forEach(b => b.classList.remove('active'));
         btn.classList.add('active');
+        if (searchInput.value) {
+            searchInput.value = '';
+            searchRequestId++;
+        }
+
         const genre = btn.getAttribute('data-genre');
         const country = btn.getAttribute('data-country');
+        const countryCode = btn.getAttribute('data-country-code');
         const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
 
         if (genre) {
+            selectedCountry = null;
+            selectedCountryCode = null;
             loadStations('genre', genre, activeSort);
             loadTopStations('genre', genre);
         } else if (country) {
             selectedCountry = country;
-            loadStations('country', country, activeSort);
-            loadTopStations('country', country);
+            selectedCountryCode = countryCode || null;
+            loadStations('country', country, activeSort, { countryCode });
+            loadTopStations('country', country, countryCode);
+        }
+
+        if (mobileFiltersToggle && sidebarCollapsible && window.innerWidth <= 768) {
+            sidebarCollapsible.classList.remove('open');
+            mobileFiltersToggle.setAttribute('aria-expanded', 'false');
         }
     });
 });
 
 playRandomBtn.addEventListener('click', () => {
-    const playable = allStations.filter(s => isPlayableStation(s));
+    const sourcePool = displayedStations.length > 0 ? displayedStations : allStations;
+    const playable = sourcePool.filter(s => isPlayableStation(s));
     if (playable.length > 0) {
         const randomIndex = Math.floor(Math.random() * playable.length);
         playStation(playable[randomIndex]);
     }
 });
 
+let isFetchingRandomGlobal = false;
 playRandomGlobalBtn.addEventListener('click', async () => {
-    const originalHtml = playRandomGlobalBtn.innerHTML;
-    playRandomGlobalBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i> <span></span>`;
+    if (isFetchingRandomGlobal) return;
+    isFetchingRandomGlobal = true;
+    playRandomGlobalBtn.disabled = true;
+    playRandomGlobalBtn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> <span></span>';
     playRandomGlobalBtn.querySelector('span').textContent = t('searching');
     try {
         const stations = await fetchStations(`${API_BASE}/topclick/100`);
@@ -1122,7 +1679,10 @@ playRandomGlobalBtn.addEventListener('click', async () => {
     } catch (e) {
         console.error('Random station error:', e);
     } finally {
-        playRandomGlobalBtn.innerHTML = originalHtml;
+        isFetchingRandomGlobal = false;
+        playRandomGlobalBtn.disabled = false;
+        playRandomGlobalBtn.innerHTML = '<i class="fa-solid fa-shuffle"></i> <span data-i18n="randomStation"></span>';
+        playRandomGlobalBtn.querySelector('span').textContent = t('randomStation');
     }
 });
 
@@ -1131,6 +1691,7 @@ const playPauseBtn = document.getElementById('play-pause-btn');
 const currentTimeEl = document.getElementById('current-time');
 const volumeSlider = document.getElementById('volume-slider');
 const volumeIcon = document.getElementById('volume-icon');
+const volumeIconBtn = document.getElementById('volume-icon-btn');
 
 let lastVolume = 1;
 
@@ -1139,57 +1700,52 @@ playPauseBtn.addEventListener('click', async () => {
         playStation(displayedStations[0]);
         return;
     }
-    if (audioStream.paused) {
+    if (!currentStation) return;
+
+    if (activeAudio.paused) {
         try {
-            await audioStream.play();
-            if (audioContext && audioContext.state === 'suspended') {
-                await audioContext.resume();
+            await activeAudio.play();
+            if (activeAudio === primaryAudio) {
+                initAudioGraph(primaryAudio, visualizerCanvas);
+                if (audioContext && audioContext.state === 'suspended') {
+                    await audioContext.resume();
+                }
             }
         } catch (e) {
             console.warn('Playback start error:', e);
+            if (activeAudio === primaryAudio && currentAttemptState && !currentAttemptState.useCorsFallback) {
+                playStation(currentStation, currentAttemptState.retryCount, true);
+            }
         }
     } else {
         clearPlaybackWatchdog();
         clearStallWatchdog();
-        audioStream.pause();
+        activeAudio.pause();
     }
 });
 
-audioStream.addEventListener('play', () => {
-    playPauseBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
-    liveDot.classList.add('active');
-    setVisualizerPlayingState(true);
-    updateActiveCardHighlight();
-});
-
-audioStream.addEventListener('pause', () => {
-    clearPlaybackWatchdog();
-    clearStallWatchdog();
-    playPauseBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
-    liveDot.classList.remove('active');
-    setVisualizerPlayingState(false);
-    updateActiveCardHighlight();
-});
-
-audioStream.addEventListener('timeupdate', () => {
-    currentTimeEl.textContent = formatTime(audioStream.currentTime);
-});
+function applyVolume(vol) {
+    const clamped = Math.max(0, Math.min(1, Number(vol)));
+    primaryAudio.volume = clamped;
+    if (fallbackAudio) fallbackAudio.volume = clamped;
+    volumeSlider.value = String(clamped);
+    updateVolumeIcon(clamped);
+    safeStorageSet(localStorage, 'radio_volume', String(clamped));
+}
 
 volumeSlider.addEventListener('input', (e) => {
-    audioStream.volume = e.target.value;
-    updateVolumeIcon(audioStream.volume);
+    const val = Number(e.target.value);
+    if (val > 0) lastVolume = val;
+    applyVolume(val);
 });
 
-volumeIcon.addEventListener('click', () => {
-    if (audioStream.volume > 0) {
-        lastVolume = audioStream.volume;
-        audioStream.volume = 0;
-        volumeSlider.value = 0;
+(volumeIconBtn || volumeIcon).addEventListener('click', () => {
+    if (activeAudio.volume > 0) {
+        lastVolume = activeAudio.volume;
+        applyVolume(0);
     } else {
-        audioStream.volume = lastVolume || 1;
-        volumeSlider.value = audioStream.volume;
+        applyVolume(lastVolume || 1);
     }
-    updateVolumeIcon(audioStream.volume);
 });
 
 function updateVolumeIcon(vol) {
@@ -1203,9 +1759,14 @@ function updateVolumeIcon(vol) {
 }
 
 function formatTime(seconds) {
-    if (isNaN(seconds)) return "0:00";
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
+    if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+    const totalSecs = Math.floor(seconds);
+    const hours = Math.floor(totalSecs / 3600);
+    const mins = Math.floor((totalSecs % 3600) / 60);
+    const secs = totalSecs % 60;
+    if (hours > 0) {
+        return `${hours}:${mins < 10 ? '0' : ''}${mins}:${secs < 10 ? '0' : ''}${secs}`;
+    }
     return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
 }
 
@@ -1218,11 +1779,14 @@ let sleepTimerInterval = null;
 if (sleepTimerBtn) {
     sleepTimerBtn.addEventListener('click', (e) => {
         e.stopPropagation();
-        sleepTimerMenu.style.display = sleepTimerMenu.style.display === 'flex' ? 'none' : 'flex';
+        const isOpen = sleepTimerMenu.style.display === 'flex';
+        sleepTimerMenu.style.display = isOpen ? 'none' : 'flex';
+        sleepTimerBtn.setAttribute('aria-expanded', String(!isOpen));
     });
 
     document.addEventListener('click', () => {
         sleepTimerMenu.style.display = 'none';
+        sleepTimerBtn.setAttribute('aria-expanded', 'false');
     });
 
     document.querySelectorAll('.timer-opt').forEach(btn => {
@@ -1230,16 +1794,20 @@ if (sleepTimerBtn) {
             const mins = parseInt(btn.getAttribute('data-mins'), 10);
             setSleepTimer(mins);
             sleepTimerMenu.style.display = 'none';
+            sleepTimerBtn.setAttribute('aria-expanded', 'false');
         });
     });
 }
 
 function setSleepTimer(mins) {
-    if (sleepTimerInterval) clearInterval(sleepTimerInterval);
+    if (sleepTimerInterval) {
+        clearInterval(sleepTimerInterval);
+        sleepTimerInterval = null;
+    }
 
     if (mins === 0) {
         timerCountdown.style.display = 'none';
-        sleepTimerBtn.style.color = 'inherit';
+        sleepTimerBtn.style.color = '';
         return;
     }
 
@@ -1247,19 +1815,25 @@ function setSleepTimer(mins) {
     timerCountdown.style.display = 'block';
 
     let timeLeft = mins * 60;
-
-    sleepTimerInterval = setInterval(() => {
+    const renderCountdown = () => {
         const m = Math.floor(timeLeft / 60);
         const s = timeLeft % 60;
         timerCountdown.textContent = `${t('remainingPrefix')} ${m}:${s < 10 ? '0' : ''}${s}`;
+    };
 
+    renderCountdown();
+
+    sleepTimerInterval = setInterval(() => {
+        timeLeft--;
         if (timeLeft <= 0) {
             clearInterval(sleepTimerInterval);
-            audioStream.pause();
+            sleepTimerInterval = null;
+            activeAudio.pause();
             timerCountdown.style.display = 'none';
-            sleepTimerBtn.style.color = 'inherit';
+            sleepTimerBtn.style.color = '';
+            return;
         }
-        timeLeft--;
+        renderCountdown();
     }, 1000);
 }
 
@@ -1270,6 +1844,12 @@ const closeFullscreen = document.getElementById('close-fullscreen');
 const fsVisualizerCanvas = document.getElementById('fullscreen-visualizer');
 const fsStationName = document.getElementById('fs-station-name');
 
+function closeFullscreenModal() {
+    if (!fullscreenModal || fullscreenModal.style.display === 'none') return;
+    fullscreenModal.style.display = 'none';
+    stopFullscreenVisualizer();
+}
+
 if (fullscreenVisBtn) {
     fullscreenVisBtn.addEventListener('click', () => {
         if (!currentStation) return;
@@ -1278,21 +1858,78 @@ if (fullscreenVisBtn) {
         startFullscreenVisualizer(fsVisualizerCanvas);
     });
 
-    closeFullscreen.addEventListener('click', () => {
-        fullscreenModal.style.display = 'none';
-        stopFullscreenVisualizer();
+    closeFullscreen.addEventListener('click', closeFullscreenModal);
+    fullscreenModal.addEventListener('click', (e) => {
+        if (e.target === fullscreenModal) closeFullscreenModal();
+    });
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') closeFullscreenModal();
     });
 }
 
+if (mobileFiltersToggle && sidebarCollapsible) {
+    mobileFiltersToggle.addEventListener('click', () => {
+        const isOpen = sidebarCollapsible.classList.toggle('open');
+        mobileFiltersToggle.setAttribute('aria-expanded', String(isOpen));
+    });
+}
+
+document.addEventListener('keydown', (e) => {
+    const tag = e.target && e.target.tagName ? e.target.tagName.toUpperCase() : '';
+    const isTyping = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || (e.target && e.target.isContentEditable);
+    if (isTyping) {
+        if (e.key === 'Escape') {
+            e.target.blur();
+        }
+        return;
+    }
+
+    if (e.key === '/') {
+        e.preventDefault();
+        if (searchInput) searchInput.focus();
+    } else if (e.key === ' ' && !(e.target && (e.target.tagName === 'BUTTON' || e.target.getAttribute('role') === 'button'))) {
+        e.preventDefault();
+        if (playPauseBtn) playPauseBtn.click();
+    } else if (e.key === 'm' || e.key === 'M') {
+        if (volumeIconBtn) volumeIconBtn.click();
+    } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        const nextVol = Math.min(1, Number(volumeSlider.value) + 0.05);
+        if (nextVol > 0) lastVolume = nextVol;
+        applyVolume(nextVol);
+    } else if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        const nextVol = Math.max(0, Number(volumeSlider.value) - 0.05);
+        if (nextVol > 0) lastVolume = nextVol;
+        applyVolume(nextVol);
+    } else if (e.key === 'f' || e.key === 'F') {
+        if (fullscreenModal && fullscreenModal.style.display === 'flex') {
+            closeFullscreenModal();
+        } else if (fullscreenVisBtn && currentStation) {
+            fullscreenVisBtn.click();
+        }
+    }
+});
+
 // ======================== СТАРТИРАНЕ ========================
 document.addEventListener('DOMContentLoaded', async () => {
+    initEqControls();
+    const savedVol = Number(safeStorageGet(localStorage, 'radio_volume', '1'));
+    if (Number.isFinite(savedVol) && savedVol >= 0 && savedVol <= 1) {
+        if (savedVol > 0) lastVolume = savedVol;
+        applyVolume(savedVol);
+    }
+
     setLanguage(detectInitialLanguage());
     renderRecentStations();
     if (visualizerCanvas) {
         startVisualizer(visualizerCanvas);
     }
+
+    const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
     await loadCustomStations();
     loadTopStations();
+    loadStations('genre', 'all', activeSort);
 
     const params = new URLSearchParams(window.location.search);
     const stationUuid = params.get('station');
@@ -1300,17 +1937,24 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (stationUuid) {
         const custom = await loadCustomStations();
         const customMatch = (Array.isArray(custom) ? custom : []).find(s => s.stationuuid === stationUuid);
-        if (customMatch && isPlayableStation(customMatch)) { playStation(customMatch); return; }
+        if (customMatch && isPlayableStation(customMatch)) {
+            playStation(customMatch);
+            return;
+        }
 
         try {
             const data = await fetchStations(`${API_BASE}/byuuid/${encodeURIComponent(stationUuid)}`);
             if (Array.isArray(data) && data.length > 0 && isPlayableStation(data[0])) {
                 playStation(data[0]);
-                return;
             }
-        } catch (e) { console.log('Share load error:', e); }
+        } catch (e) {
+            console.log('Share load error:', e);
+        }
     }
-
-    const activeSort = document.querySelector('.sort-btn.active')?.getAttribute('data-sort') || 'clickcount';
-    loadStations('genre', 'all', activeSort);
 });
+
+if ('serviceWorker' in navigator && (window.location.protocol === 'https:' || window.location.protocol === 'http:')) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch(() => {});
+    });
+}

@@ -6,9 +6,10 @@
     <meta name="theme-color" content="#0b0f19">
     <title>GlobalPulse Radio | Global & Anonymous Streaming</title>
 
-    <link rel="icon" type="image/png" sizes="192x192" href="/PulseRadio/favicon-192x192.png">
-    <link rel="shortcut icon" href="/PulseRadio/favicon-192x192.png">
-    <link rel="apple-touch-icon" href="/PulseRadio/favicon-192x192.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="favicon-192x192.png">
+    <link rel="shortcut icon" href="favicon-192x192.png">
+    <link rel="apple-touch-icon" href="favicon-192x192.png">
+    <link rel="manifest" href="manifest.json">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -27,39 +28,27 @@
         </div>
         <div class="header-controls">
             <div class="custom-lang-select" id="lang-select-container">
-                <button type="button" class="lang-btn" id="lang-btn">
+                <button type="button" class="lang-btn" id="lang-btn" aria-haspopup="listbox" aria-expanded="false">
                     <span class="fi fi-bg"></span> <span id="lang-btn-label">Български</span> <i class="fa-solid fa-chevron-down" style="font-size: 0.7rem; margin-left: 5px;"></i>
                 </button>
-                <div class="lang-dropdown" id="lang-dropdown">
-                    <div class="lang-option" data-value="bg"><span class="fi fi-bg"></span> Български</div>
-                    <div class="lang-option" data-value="en"><span class="fi fi-gb"></span> English</div>
-                    <div class="lang-option" data-value="es"><span class="fi fi-es"></span> Español</div>
-                    <div class="lang-option" data-value="fr"><span class="fi fi-fr"></span> Français</div>
-                    <div class="lang-option" data-value="de"><span class="fi fi-de"></span> Deutsch</div>
-                    <div class="lang-option" data-value="it"><span class="fi fi-it"></span> Italiano</div>
-                    <div class="lang-option" data-value="pt"><span class="fi fi-pt"></span> Português</div>
-                    <div class="lang-option" data-value="ru"><span class="fi fi-ru"></span> Русский</div>
-                    <div class="lang-option" data-value="zh"><span class="fi fi-cn"></span> 中文</div>
-                    <div class="lang-option" data-value="ja"><span class="fi fi-jp"></span> 日本語</div>
+                <div class="lang-dropdown" id="lang-dropdown" role="listbox">
+                    <button type="button" class="lang-option" data-value="bg"><span class="fi fi-bg"></span> Български</button>
+                    <button type="button" class="lang-option" data-value="en"><span class="fi fi-gb"></span> English</button>
+                    <button type="button" class="lang-option" data-value="es"><span class="fi fi-es"></span> Español</button>
+                    <button type="button" class="lang-option" data-value="fr"><span class="fi fi-fr"></span> Français</button>
+                    <button type="button" class="lang-option" data-value="de"><span class="fi fi-de"></span> Deutsch</button>
+                    <button type="button" class="lang-option" data-value="it"><span class="fi fi-it"></span> Italiano</button>
+                    <button type="button" class="lang-option" data-value="pt"><span class="fi fi-pt"></span> Português</button>
+                    <button type="button" class="lang-option" data-value="ru"><span class="fi fi-ru"></span> Русский</button>
+                    <button type="button" class="lang-option" data-value="zh"><span class="fi fi-cn"></span> 中文</button>
+                    <button type="button" class="lang-option" data-value="ja"><span class="fi fi-jp"></span> 日本語</button>
                 </div>
             </div>
-            <select id="language-select" style="display:none;">
-                <option value="bg" selected>bg</option>
-                <option value="en">en</option>
-                <option value="es">es</option>
-                <option value="fr">fr</option>
-                <option value="de">de</option>
-                <option value="it">it</option>
-                <option value="pt">pt</option>
-                <option value="ru">ru</option>
-                <option value="zh">zh</option>
-                <option value="ja">ja</option>
-            </select>
 
             <button type="button" id="theme-toggle" class="icon-btn" title="Смени тема" data-i18n-title="themeToggleTitle">
                 <i class="fa-solid fa-moon"></i>
             </button>
-            <span class="privacy-badge"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="privacyBadge">100% Anonymous</span></span>
+            <span class="privacy-badge"><i class="fa-solid fa-shield-halved"></i> <span data-i18n="privacyBadge">Privacy-First</span></span>
         </div>
     </header>
 
@@ -71,6 +60,13 @@
                 <input type="text" id="search-input" placeholder="Търси станция..." data-i18n-placeholder="searchPlaceholder">
             </div>
 
+            <button type="button" id="mobile-filters-toggle" class="mobile-filters-toggle" aria-expanded="false">
+                <i class="fa-solid fa-sliders"></i>
+                <span data-i18n="filtersToggle">Филтри и Любими</span>
+                <i class="fa-solid fa-chevron-down toggle-chevron"></i>
+            </button>
+
+            <div class="sidebar-collapsible" id="sidebar-collapsible">
             <div class="filter-group">
                 <h3 data-i18n="genres">Музикални жанрове</h3>
                 <div class="categories-list" id="genre-buttons">
@@ -91,32 +87,32 @@
                     <input type="text" id="country-search-input" placeholder="Търси държава..." data-i18n-placeholder="searchCountryPlaceholder">
                 </div>
                 <div class="countries-grid" id="country-buttons">
-                    <button type="button" class="cat-btn" data-country="Bulgaria"><span class="fi fi-bg"></span> Bulgaria</button>
-                    <button type="button" class="cat-btn" data-country="United States"><span class="fi fi-us"></span> USA</button>
-                    <button type="button" class="cat-btn" data-country="United Kingdom"><span class="fi fi-gb"></span> UK</button>
-                    <button type="button" class="cat-btn" data-country="Germany"><span class="fi fi-de"></span> Germany</button>
-                    <button type="button" class="cat-btn" data-country="France"><span class="fi fi-fr"></span> France</button>
-                    <button type="button" class="cat-btn" data-country="Italy"><span class="fi fi-it"></span> Italy</button>
-                    <button type="button" class="cat-btn" data-country="Spain"><span class="fi fi-es"></span> Spain</button>
-                    <button type="button" class="cat-btn" data-country="Portugal"><span class="fi fi-pt"></span> Portugal</button>
-                    <button type="button" class="cat-btn" data-country="Netherlands"><span class="fi fi-nl"></span> Netherlands</button>
-                    <button type="button" class="cat-btn" data-country="Belgium"><span class="fi fi-be"></span> Belgium</button>
-                    <button type="button" class="cat-btn" data-country="Austria"><span class="fi fi-at"></span> Austria</button>
-                    <button type="button" class="cat-btn" data-country="Switzerland"><span class="fi fi-ch"></span> Switzerland</button>
-                    <button type="button" class="cat-btn" data-country="Sweden"><span class="fi fi-se"></span> Sweden</button>
-                    <button type="button" class="cat-btn" data-country="Norway"><span class="fi fi-no"></span> Norway</button>
-                    <button type="button" class="cat-btn" data-country="Denmark"><span class="fi fi-dk"></span> Denmark</button>
-                    <button type="button" class="cat-btn" data-country="Finland"><span class="fi fi-fi"></span> Finland</button>
-                    <button type="button" class="cat-btn" data-country="Poland"><span class="fi fi-pl"></span> Poland</button>
-                    <button type="button" class="cat-btn" data-country="Romania"><span class="fi fi-ro"></span> Romania</button>
-                    <button type="button" class="cat-btn" data-country="Greece"><span class="fi fi-gr"></span> Greece</button>
-                    <button type="button" class="cat-btn" data-country="Turkey"><span class="fi fi-tr"></span> Turkey</button>
-                    <button type="button" class="cat-btn" data-country="Serbia"><span class="fi fi-rs"></span> Serbia</button>
-                    <button type="button" class="cat-btn" data-country="Canada"><span class="fi fi-ca"></span> Canada</button>
-                    <button type="button" class="cat-btn" data-country="Brazil"><span class="fi fi-br"></span> Brazil</button>
-                    <button type="button" class="cat-btn" data-country="Mexico"><span class="fi fi-mx"></span> Mexico</button>
-                    <button type="button" class="cat-btn" data-country="Japan"><span class="fi fi-jp"></span> Japan</button>
-                    <button type="button" class="cat-btn" data-country="Australia"><span class="fi fi-au"></span> Australia</button>
+                    <button type="button" class="cat-btn" data-country="Bulgaria" data-country-code="BG"><span class="fi fi-bg"></span> Bulgaria</button>
+                    <button type="button" class="cat-btn" data-country="United States" data-country-code="US"><span class="fi fi-us"></span> USA</button>
+                    <button type="button" class="cat-btn" data-country="United Kingdom" data-country-code="GB"><span class="fi fi-gb"></span> UK</button>
+                    <button type="button" class="cat-btn" data-country="Germany" data-country-code="DE"><span class="fi fi-de"></span> Germany</button>
+                    <button type="button" class="cat-btn" data-country="France" data-country-code="FR"><span class="fi fi-fr"></span> France</button>
+                    <button type="button" class="cat-btn" data-country="Italy" data-country-code="IT"><span class="fi fi-it"></span> Italy</button>
+                    <button type="button" class="cat-btn" data-country="Spain" data-country-code="ES"><span class="fi fi-es"></span> Spain</button>
+                    <button type="button" class="cat-btn" data-country="Portugal" data-country-code="PT"><span class="fi fi-pt"></span> Portugal</button>
+                    <button type="button" class="cat-btn" data-country="Netherlands" data-country-code="NL"><span class="fi fi-nl"></span> Netherlands</button>
+                    <button type="button" class="cat-btn" data-country="Belgium" data-country-code="BE"><span class="fi fi-be"></span> Belgium</button>
+                    <button type="button" class="cat-btn" data-country="Austria" data-country-code="AT"><span class="fi fi-at"></span> Austria</button>
+                    <button type="button" class="cat-btn" data-country="Switzerland" data-country-code="CH"><span class="fi fi-ch"></span> Switzerland</button>
+                    <button type="button" class="cat-btn" data-country="Sweden" data-country-code="SE"><span class="fi fi-se"></span> Sweden</button>
+                    <button type="button" class="cat-btn" data-country="Norway" data-country-code="NO"><span class="fi fi-no"></span> Norway</button>
+                    <button type="button" class="cat-btn" data-country="Denmark" data-country-code="DK"><span class="fi fi-dk"></span> Denmark</button>
+                    <button type="button" class="cat-btn" data-country="Finland" data-country-code="FI"><span class="fi fi-fi"></span> Finland</button>
+                    <button type="button" class="cat-btn" data-country="Poland" data-country-code="PL"><span class="fi fi-pl"></span> Poland</button>
+                    <button type="button" class="cat-btn" data-country="Romania" data-country-code="RO"><span class="fi fi-ro"></span> Romania</button>
+                    <button type="button" class="cat-btn" data-country="Greece" data-country-code="GR"><span class="fi fi-gr"></span> Greece</button>
+                    <button type="button" class="cat-btn" data-country="Turkey" data-country-code="TR"><span class="fi fi-tr"></span> Turkey</button>
+                    <button type="button" class="cat-btn" data-country="Serbia" data-country-code="RS"><span class="fi fi-rs"></span> Serbia</button>
+                    <button type="button" class="cat-btn" data-country="Canada" data-country-code="CA"><span class="fi fi-ca"></span> Canada</button>
+                    <button type="button" class="cat-btn" data-country="Brazil" data-country-code="BR"><span class="fi fi-br"></span> Brazil</button>
+                    <button type="button" class="cat-btn" data-country="Mexico" data-country-code="MX"><span class="fi fi-mx"></span> Mexico</button>
+                    <button type="button" class="cat-btn" data-country="Japan" data-country-code="JP"><span class="fi fi-jp"></span> Japan</button>
+                    <button type="button" class="cat-btn" data-country="Australia" data-country-code="AU"><span class="fi fi-au"></span> Australia</button>
                 </div>
                 <button type="button" id="toggle-more-countries-btn" class="more-countries-btn">
                     <i class="fa-solid fa-chevron-down"></i> <span data-i18n="moreCountries">Още държави</span>
@@ -124,8 +120,16 @@
             </div>
 
             <div class="filter-group">
-                <h3 data-i18n="favorites">Любими / Playlist</h3>
+                <div class="favorites-header">
+                    <h3 data-i18n="favorites">Любими / Playlist</h3>
+                    <div class="favorites-io-actions">
+                        <button type="button" id="export-favs-btn" class="mini-io-btn" title="Експорт любими" data-i18n-title="exportFavsTitle"><i class="fa-solid fa-download"></i></button>
+                        <button type="button" id="import-favs-btn" class="mini-io-btn" title="Импорт любими" data-i18n-title="importFavsTitle"><i class="fa-solid fa-upload"></i></button>
+                        <input type="file" id="import-favs-input" accept="application/json,.json" style="display:none;">
+                    </div>
+                </div>
                 <div class="categories-list favorites-list" id="favorites-list"></div>
+            </div>
             </div>
         </aside>
 
@@ -145,25 +149,37 @@
                 <!-- ФИКСИРАН СТЪКЛЕН ДОЛЕН ПЛЕЙЪР С ВИЗУАЛИЗАТОР -->
                 <div class="player-card">
                     <div class="now-playing-info">
-                        <img id="station-icon" src="https://cdn-icons-png.flaticon.com/512/2950/2950683.png" alt="Logo">
+                        <img id="station-icon" src="favicon-192x192.png" alt="Logo">
                         <div class="now-playing-meta">
-                            <h2 id="station-name" data-i18n="selectStation">Изберете станция</h2>
-                            <p id="station-details" data-i18n="genreCountry">Жанр и Държава</p>
+                            <h2 id="station-name">Изберете станция</h2>
+                            <p id="station-details">Жанр и Държава</p>
                             <div class="now-playing-song" id="song-info-container" style="display: none;">
                                 <i class="fa-solid fa-music"></i>
-                                <span id="song-info-text" data-i18n="songLoading">Проверка...</span>
+                                <span id="song-info-text"></span>
+                                <button type="button" id="copy-song-btn" class="mini-refresh-btn" title="Копирай песен" data-i18n-title="copySongTitle"><i class="fa-regular fa-copy"></i></button>
+                                <a id="search-song-btn" class="mini-refresh-btn" href="#" target="_blank" rel="noopener noreferrer" title="Търси в YouTube" data-i18n-title="searchSongTitle"><i class="fa-brands fa-youtube"></i></a>
                                 <button type="button" id="refresh-song-btn" class="mini-refresh-btn" title="Обнови" data-i18n-title="refreshTitle"><i class="fa-solid fa-rotate-right"></i></button>
                             </div>
                         </div>
                     </div>
 
                     <div class="eq-controls">
-                        <label data-i18n="bass">Bass</label> <input type="range" id="eq-bass" min="-12" max="12" value="0">
-                        <label data-i18n="mid">Mid</label> <input type="range" id="eq-mid" min="-12" max="12" value="0">
-                        <label data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0">
-                        
+                        <select id="eq-preset" class="eq-preset-select" aria-label="EQ Preset" title="EQ Preset">
+                            <option value="flat" data-i18n="eqFlat">Flat</option>
+                            <option value="bass" data-i18n="eqBassBoost">Bass+</option>
+                            <option value="rock" data-i18n="eqRock">Rock</option>
+                            <option value="vocal" data-i18n="eqVocal">Vocal</option>
+                            <option value="custom" data-i18n="eqCustom">Custom</option>
+                        </select>
+                        <label for="eq-bass" data-i18n="bass">Bass</label> <input type="range" id="eq-bass" min="-12" max="12" value="0" aria-label="Bass">
+                        <label for="eq-mid" data-i18n="mid">Mid</label> <input type="range" id="eq-mid" min="-12" max="12" value="0" aria-label="Mid">
+                        <label for="eq-treble" data-i18n="treble">Treble</label> <input type="range" id="eq-treble" min="-12" max="12" value="0" aria-label="Treble">
+                        <button type="button" id="eq-reset-btn" class="eq-reset-btn" data-i18n-title="eqResetTitle" title="Reset EQ" aria-label="Reset EQ"><i class="fa-solid fa-rotate-left"></i></button>
+                    </div>
+
+                    <div class="player-extra-controls">
                         <div class="sleep-timer-dropdown-container">
-                            <button type="button" id="sleep-timer-btn" class="icon-btn" title="Сън таймер" data-i18n-title="sleepTimerTitle"><i class="fa-regular fa-clock"></i></button>
+                            <button type="button" id="sleep-timer-btn" class="icon-btn" title="Сън таймер" data-i18n-title="sleepTimerTitle" aria-haspopup="true" aria-expanded="false"><i class="fa-regular fa-clock"></i></button>
                             <div class="sleep-timer-menu" id="sleep-timer-menu">
                                 <span style="font-size: 0.75rem; color: var(--text-muted);" data-i18n="sleepTimerLabel">Сън таймер:</span>
                                 <button type="button" class="timer-opt" data-mins="0" data-i18n="timerOff">Изключен</button>
@@ -179,13 +195,13 @@
 
                     <!-- ЖИВ АУДИО ВИЗУАЛИЗАТОР В ОЧЕРТАНОТО ПОЛЕ -->
                     <div class="player-visualizer-box" title="Аудио визуализатор" data-i18n-title="visualizerTitle">
-                        <canvas id="visualizer" width="210" height="36"></canvas>
+                        <canvas id="visualizer" width="190" height="34"></canvas>
                     </div>
 
                     <div class="custom-player">
                         <audio id="audio-stream" crossorigin="anonymous"></audio>
                         <button type="button" id="prev-station-btn" class="nav-player-btn" title="Предишна станция" data-i18n-title="prevStationTitle"><i class="fa-solid fa-backward-step"></i></button>
-                        <button type="button" id="play-pause-btn" class="player-btn"><i class="fa-solid fa-play"></i></button>
+                        <button type="button" id="play-pause-btn" class="player-btn" aria-label="Play / Pause"><i class="fa-solid fa-play"></i></button>
                         <button type="button" id="next-station-btn" class="nav-player-btn" title="Следваща станция" data-i18n-title="nextStationTitle"><i class="fa-solid fa-forward-step"></i></button>
                         
                         <div class="live-status">
@@ -194,8 +210,10 @@
                         </div>
 
                         <div class="volume-container">
-                            <i class="fa-solid fa-volume-high" id="volume-icon" style="cursor: pointer;" title="Mute / Unmute" data-i18n-title="muteTitle"></i>
-                            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="1">
+                            <button type="button" class="volume-icon-btn" id="volume-icon-btn" title="Mute / Unmute" data-i18n-title="muteTitle">
+                                <i class="fa-solid fa-volume-high" id="volume-icon"></i>
+                            </button>
+                            <input type="range" id="volume-slider" class="volume-slider" min="0" max="1" step="0.01" value="1" aria-label="Volume">
                         </div>
                     </div>
 
@@ -241,14 +259,19 @@
                 <div id="stations-container" class="grid-view">
                     <p class="loading-text" data-i18n="loading">Зареждане...</p>
                 </div>
+                <div class="load-more-wrapper" id="load-more-wrapper" style="display: none;">
+                    <button type="button" id="load-more-btn" class="load-more-btn">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="loadMore">Зареди още</span>
+                    </button>
+                </div>
             </div>
         </section>
 
     </main>
 
-    <div id="fullscreen-modal" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11, 15, 25, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
+    <div id="fullscreen-modal" role="dialog" aria-modal="true" aria-labelledby="fs-station-name" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(11, 15, 25, 0.95); display: none; flex-direction: column; justify-content: center; align-items: center; z-index: 1000;">
         <button type="button" id="close-fullscreen" title="Затвори" data-i18n-title="closeTitle" style="position: absolute; top: 20px; right: 20px; background: transparent; border: none; color: #fff; font-size: 2rem; cursor: pointer;"><i class="fa-solid fa-xmark"></i></button>
-        <h2 id="fs-station-name" data-i18n="fullscreenStationTitle" style="color: #fff; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Радио станция</h2>
+        <h2 id="fs-station-name" style="color: #fff; margin-bottom: 20px; font-family: 'Montserrat', sans-serif;">Радио станция</h2>
         <canvas id="fullscreen-visualizer" style="width: 80vw; height: 60vh; background: rgba(0,0,0,0.5); border-radius: 12px;"></canvas>
     </div>
 
