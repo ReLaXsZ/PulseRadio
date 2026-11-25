@@ -231,7 +231,7 @@ function isSafeStreamUrl(url) {
     if (!url || typeof url !== 'string') return false;
     try {
         const parsed = new URL(url.trim());
-        return parsed.protocol === 'https:';
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
     } catch {
         return false;
     }
@@ -936,16 +936,19 @@ searchInput.addEventListener('input', (e) => {
     updateLoadMoreVisibility();
     const reqId = ++searchRequestId;
     searchTimeout = setTimeout(async () => {
+        const normalizeSearch = (str) => (str || '').toLowerCase().replace(/\s+/g, '');
+        const compactTerm = normalizeSearch(lowerTerm);
+        const matchesQuery = (s) =>
+            (s.name || '').toLowerCase().includes(lowerTerm) ||
+            normalizeSearch(s.name).includes(compactTerm) ||
+            (s.tags || '').toLowerCase().includes(lowerTerm);
+
         try {
             const custom = await loadCustomStations();
             if (reqId !== searchRequestId) return;
 
             const activeCountry = selectedCountry || (currentFilterType === 'country' ? currentFilterQuery : null);
             const activeCountryCode = selectedCountryCode;
-
-            const matchesQuery = (s) =>
-                (s.name || '').toLowerCase().includes(lowerTerm) ||
-                (s.tags || '').toLowerCase().includes(lowerTerm);
 
             const matchesCountry = (s) => {
                 if (!activeCountry && !activeCountryCode) return true;
@@ -992,9 +995,7 @@ searchInput.addEventListener('input', (e) => {
             displayStations(Array.from(uniqueStations.values()));
         } catch {
             if (reqId !== searchRequestId) return;
-            const filtered = allStations.filter(s =>
-                (s.name || '').toLowerCase().includes(lowerTerm) || (s.tags || '').toLowerCase().includes(lowerTerm)
-            );
+            const filtered = allStations.filter(s => matchesQuery(s));
             displayStations(filtered);
         }
     }, 350);
@@ -1555,9 +1556,10 @@ async function checkCurrentSong(station) {
 
     try {
         const urlObj = new URL(station.url_resolved);
+        const statusProtocol = window.location.protocol === 'https:' ? 'https:' : urlObj.protocol;
         const statusEndpoints = [
-            `${urlObj.protocol}//${urlObj.host}/status-json.xsl`,
-            `${urlObj.protocol}//${urlObj.host}/stats?json=1`
+            `${statusProtocol}//${urlObj.host}/status-json.xsl`,
+            `${statusProtocol}//${urlObj.host}/stats?json=1`
         ];
 
         for (const statusUrl of statusEndpoints) {
