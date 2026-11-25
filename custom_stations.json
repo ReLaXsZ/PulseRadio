@@ -30,5 +30,13 @@
     "country": "Bulgaria",
     "tags": "00s,dance",
     "favicon": "https://media.metacast.eu/pictures/10_2015/OdriLYWpbHJqKDAcGCMv-7384.png"
+  },
+  {
+    "stationuuid": "custom-avtoradio-bg",
+    "name": "Avtoradio Bulgaria",
+    "url_resolved": "https://play.global.audio/avtoradiohi.aac",
+    "country": "Bulgaria",
+    "tags": "pop,hits,dance",
+    "favicon": "https://www.avtoradio.bg/favicon.ico"
   }
 ]
