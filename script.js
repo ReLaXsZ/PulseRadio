@@ -145,6 +145,16 @@ function savePersistedFailedStations(mapObj) {
 const failedStationsMap = loadPersistedFailedStations();
 const DEFAULT_ICON = "data:image/svg+xml;utf8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%231e293b'/%3E%3Ccircle cx='32' cy='32' r='16' fill='none' stroke='%2338bdf8' stroke-width='3'/%3E%3Ccircle cx='32' cy='32' r='5' fill='%2338bdf8'/%3E%3C/svg%3E";
 const BLOCKED_ICON_HOSTS = ['pozdravite.net'];
+const ICON_PALETTE = [
+    ['#0284c7', '#38bdf8'],
+    ['#4f46e5', '#818cf8'],
+    ['#7c3aed', '#a78bfa'],
+    ['#db2777', '#f472b6'],
+    ['#dc2626', '#f87171'],
+    ['#d97706', '#fbbf24'],
+    ['#059669', '#34d399'],
+    ['#0d9488', '#2dd4bf']
+];
 
 function getSafeIconUrl(url) {
     if (!url || typeof url !== 'string') return DEFAULT_ICON;
@@ -161,6 +171,92 @@ function getSafeIconUrl(url) {
     } catch {
         return DEFAULT_ICON;
     }
+}
+
+function getStationInitials(name) {
+    const cleaned = cleanString(name).replace(/[^\p{L}\p{N}\s]/gu, ' ').trim();
+    if (!cleaned) return 'FM';
+    const parts = cleaned.split(/\s+/).filter(Boolean);
+    if (parts.length >= 2) {
+        return (parts[0][0] + parts[1][0]).toUpperCase();
+    }
+    return parts[0].slice(0, 2).toUpperCase();
+}
+
+function createInitialsIcon(name) {
+    const label = getStationInitials(name);
+    const fullName = cleanString(name);
+    let hash = 0;
+    for (let i = 0; i < fullName.length; i++) {
+        hash = (hash * 33 + fullName.charCodeAt(i)) >>> 0;
+    }
+    const [c1, c2] = ICON_PALETTE[hash % ICON_PALETTE.length];
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64"><defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="${c1}"/><stop offset="100%" stop-color="${c2}"/></linearGradient></defs><rect width="64" height="64" rx="14" fill="url(#g)"/><text x="50%" y="53%" dominant-baseline="middle" text-anchor="middle" fill="#ffffff" font-family="Inter,Arial,sans-serif" font-size="24" font-weight="700">${label}</text></svg>`;
+    return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
+
+function getStationIconCandidates(station) {
+    if (!station) return [];
+    const candidates = [];
+    const seen = new Set();
+
+    const addCandidate = (url) => {
+        if (!url || seen.has(url)) return;
+        seen.add(url);
+        candidates.push(url);
+    };
+
+    const primaryUrl = getSafeIconUrl(station.favicon);
+    if (primaryUrl && primaryUrl !== DEFAULT_ICON) {
+        addCandidate(primaryUrl);
+    }
+
+    const extractHost = (rawUrl) => {
+        if (!rawUrl || typeof rawUrl !== 'string') return '';
+        try {
+            const parsed = new URL(rawUrl.trim());
+            if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '';
+            const host = parsed.hostname.toLowerCase();
+            const isBlocked = BLOCKED_ICON_HOSTS.some(
+                (blocked) => host === blocked || host.endsWith(`.${blocked}`)
+            );
+            return isBlocked ? '' : host;
+        } catch {
+            return '';
+        }
+    };
+
+    const homepageHost = extractHost(station.homepage);
+    if (homepageHost) {
+        addCandidate(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(homepageHost)}.ico`);
+    } else if (primaryUrl && primaryUrl !== DEFAULT_ICON) {
+        const iconHost = extractHost(primaryUrl);
+        if (iconHost) {
+            addCandidate(`https://icons.duckduckgo.com/ip3/${encodeURIComponent(iconHost)}.ico`);
+        }
+    }
+
+    return candidates;
+}
+
+function attachStationLogo(imgEl, station) {
+    if (!imgEl) return;
+    imgEl.referrerPolicy = 'no-referrer';
+    const fallbackSvg = station ? createInitialsIcon(station.name) : DEFAULT_ICON;
+    const candidates = getStationIconCandidates(station);
+    let index = 0;
+
+    const tryNext = () => {
+        if (index < candidates.length) {
+            imgEl.src = candidates[index++];
+        } else {
+            imgEl.onerror = null;
+            imgEl.src = fallbackSvg;
+        }
+    };
+
+    imgEl.onerror = tryNext;
+    tryNext();
 }
 
 function t(key) {
@@ -473,10 +569,9 @@ function renderFavorites() {
         btn.className = 'fav-sidebar-item';
 
         const img = document.createElement('img');
-        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
-        img.onerror = () => { img.src = DEFAULT_ICON; };
+        attachStationLogo(img, station);
 
         const info = document.createElement('div');
         info.className = 'fav-sidebar-info';
@@ -559,7 +654,8 @@ if (importFavsBtn && importFavsInput) {
                     tags: item.tags || '',
                     codec: item.codec || '',
                     bitrate: item.bitrate || 0,
-                    favicon: item.favicon || ''
+                    favicon: item.favicon || '',
+                    homepage: item.homepage || ''
                 });
                 added++;
             });
@@ -598,7 +694,8 @@ function addRecentStation(station) {
         tags: station.tags,
         codec: station.codec,
         bitrate: station.bitrate,
-        favicon: station.favicon
+        favicon: station.favicon,
+        homepage: station.homepage || ''
     });
     if (recent.length > 5) recent = recent.slice(0, 5);
     safeStorageSet(localStorage, 'radio_recent', JSON.stringify(recent));
@@ -621,10 +718,9 @@ function renderRecentStations() {
         card.className = 'recent-card';
 
         const img = document.createElement('img');
-        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
-        img.onerror = () => { img.src = DEFAULT_ICON; };
+        attachStationLogo(img, station);
 
         const info = document.createElement('div');
         info.className = 'recent-card-info';
@@ -685,10 +781,9 @@ function renderQuickPicks(stations) {
         btn.type = 'button';
         btn.className = 'quick-pick-item';
         const img = document.createElement('img');
-        img.src = getSafeIconUrl(station.favicon);
         img.alt = '';
         img.loading = 'lazy';
-        img.onerror = () => { img.src = DEFAULT_ICON; };
+        attachStationLogo(img, station);
         const span = document.createElement('span');
         span.textContent = cleanString(station.name);
         btn.appendChild(img);
@@ -1111,10 +1206,9 @@ function displayStations(stations) {
 
         const img = document.createElement('img');
         img.className = 'station-logo';
-        img.src = getSafeIconUrl(station.favicon);
         img.alt = 'Logo';
         img.loading = 'lazy';
-        img.onerror = () => { img.src = DEFAULT_ICON; };
+        attachStationLogo(img, station);
 
         const infoDiv = document.createElement('div');
         infoDiv.className = 'station-info-text';
@@ -1258,8 +1352,8 @@ function setPlayButtonState(state) {
 function updateMediaSession(station, songTitle = '') {
     if (!('mediaSession' in navigator) || typeof MediaMetadata === 'undefined' || !station) return;
     try {
-        const iconUrl = getSafeIconUrl(station.favicon);
-        const artworkSrc = iconUrl.startsWith('http') ? iconUrl : 'favicon-192x192.png';
+        const candidates = getStationIconCandidates(station);
+        const artworkSrc = candidates.length > 0 ? candidates[0] : 'favicon-192x192.png';
         navigator.mediaSession.metadata = new MediaMetadata({
             title: songTitle || cleanString(station.name),
             artist: songTitle ? cleanString(station.name) : formatMetaLine(station),
@@ -1393,8 +1487,7 @@ bindAudioEvents(primaryAudio);
 function updatePlayerHeaderForStation(station) {
     stationName.textContent = cleanString(station.name);
     stationDetails.textContent = formatMetaLine(station);
-    stationIcon.src = getSafeIconUrl(station.favicon);
-    stationIcon.onerror = () => { stationIcon.src = DEFAULT_ICON; };
+    attachStationLogo(stationIcon, station);
     shareBtn.disabled = false;
     currentTimeEl.textContent = '0:00';
 }

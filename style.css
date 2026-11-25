@@ -11,6 +11,7 @@
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.26);
     --player-bg: rgba(11, 15, 25, 0.65);
     --input-bg: rgba(15, 23, 42, 0.35);
+    --logo-bg: rgba(255, 255, 255, 0.12);
     --glass-blur: blur(8px);
     --hero-bg: linear-gradient(90deg, rgba(11, 15, 25, 0.78) 0%, rgba(11, 15, 25, 0.42) 55%, rgba(11, 15, 25, 0.22) 100%), url('globe-dark.webp');
 }
@@ -28,6 +29,7 @@ body.light-theme {
     --glass-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.85);
     --player-bg: rgba(255, 255, 255, 0.72);
     --input-bg: rgba(255, 255, 255, 0.5);
+    --logo-bg: rgba(15, 23, 42, 0.06);
     --hero-bg: linear-gradient(90deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.48) 55%, rgba(255, 255, 255, 0.25) 100%), url('globe-light.webp');
 }
 
@@ -450,7 +452,8 @@ body.light-theme .lang-dropdown {
     height: 30px;
     border-radius: 6px;
     object-fit: contain;
-    background: transparent;
+    background: var(--logo-bg);
+    padding: 2px;
     flex-shrink: 0;
 }
 
@@ -608,7 +611,8 @@ body.light-theme .lang-dropdown {
     height: 48px;
     border-radius: 12px;
     object-fit: contain;
-    background: transparent;
+    background: var(--logo-bg);
+    padding: 3px;
 }
 
 .quick-pick-item span {
@@ -681,7 +685,8 @@ body.light-theme .lang-dropdown {
     height: 42px;
     border-radius: 8px;
     object-fit: contain;
-    background: transparent;
+    background: var(--logo-bg);
+    padding: 3px;
     flex-shrink: 0;
 }
 
@@ -810,7 +815,8 @@ body.light-theme .lang-dropdown {
     height: 48px;
     border-radius: 10px;
     object-fit: contain;
-    background-color: transparent;
+    background-color: var(--logo-bg);
+    padding: 3px;
     flex-shrink: 0;
 }
 
@@ -955,7 +961,8 @@ body.light-theme .lang-dropdown {
     height: 44px;
     border-radius: 10px;
     object-fit: contain;
-    background-color: transparent;
+    background-color: var(--logo-bg);
+    padding: 3px;
     flex-shrink: 0;
 }
 
